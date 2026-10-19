@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f5f8f8">
+<title>道の気配MAP｜範囲選択 A方式 タッチ試作 v0.2</title>
+<style>
+:root{--ink:#163b40;--muted:#566d72;--teal:#0f766e;--mint:#def3ef;--blue:#5b43c9;--line:#d3dfe1;--surface:#fffffff2}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overscroll-behavior:none}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic","Noto Sans JP",sans-serif;color:var(--ink);background:#eaf1ee}
+button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:3px solid #d49609;outline-offset:2px}
+main{position:fixed;inset:0;overflow:hidden}
+#map{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+#map[data-mode="edit"]{cursor:grab}
+#map .handle{cursor:grab;touch-action:none}
+#map .handle:active{cursor:grabbing}
+#map #region{touch-action:none;cursor:move}
+#map #region:active{cursor:grabbing}
+.floating-title{position:absolute;left:12px;right:12px;top:max(12px,env(safe-area-inset-top));max-width:460px;z-index:4;pointer-events:none;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);box-shadow:0 5px 20px #1c3e4020;border:1px solid #d6e5e3;border-radius:15px;padding:11px 13px}
+.eyebrow{font-size:10px;letter-spacing:.09em;font-weight:850;color:#0f766e}
+h1{font-size:16px;margin:3px 0 5px;line-height:1.3}
+.floating-title p{font-size:11px;line-height:1.5;margin:0;color:var(--muted)}
+.corner-keys{position:absolute;right:12px;top:max(108px,calc(env(safe-area-inset-top) + 12px));z-index:5;display:flex;flex-direction:column;gap:6px}
+.zoom{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);box-shadow:0 2px 7px #122e3018;font-weight:800;font-size:21px;color:#295456}
+.dock-wrap{position:absolute;left:0;right:0;bottom:max(10px,env(safe-area-inset-bottom));z-index:6;display:flex;justify-content:center;padding:0 10px;pointer-events:none}
+.dock{pointer-events:auto;width:100%;max-width:475px;padding:13px 14px 12px;border-radius:20px;border:1px solid #c5d9d8;background:rgba(255,255,255,.96);backdrop-filter:blur(16px);box-shadow:0 11px 28px #1b474634}
+.dock-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px}
+.dock-title strong{font-size:13px;line-height:1.4}
+.mode-note{font-size:10px;color:#0f766e;font-weight:850;background:#e0f2ed;padding:4px 7px;border-radius:7px;white-space:nowrap}
+.buttons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.btn{border:1px solid #cbdadc;border-radius:11px;min-height:42px;background:#f8fbfb;color:var(--ink);font-size:12px;font-weight:800;padding:7px 4px}
+.btn.selected{background:#e9e7ff;border-color:#9d92e2;color:#432c9a}
+.btn.secondary{background:white}
+.btn.confirm{background:#0f766e;border-color:#0f766e;color:white}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px;font-size:11px;color:#49636b}
+.chip{padding:4px 7px;border-radius:7px;background:#f0f5f4;font-variant-numeric:tabular-nums}
+.hint{border-top:1px solid #e1e8e8;margin:9px 0 0;padding-top:8px;font-size:11px;line-height:1.5;color:#48666d}
+.legend{position:absolute;left:12px;bottom:calc(max(10px,env(safe-area-inset-bottom)) + 195px);z-index:3;pointer-events:none;background:#ffffffdb;padding:5px 9px;border-radius:8px;border:1px solid #dfe9e8;font-size:10px;color:#45646a;display:flex;gap:9px;align-items:center}
+.sample-dot{display:inline-block;width:10px;height:10px;background:#d56c4d;border:1px solid white;border-radius:50%;box-shadow:0 0 0 1px #d56c4d}
+@media (min-width:720px){.floating-title{top:18px;left:20px}.corner-keys{top:20px;right:20px}.dock-wrap{bottom:24px}.legend{bottom:20px;left:20px}.dock{max-width:505px}}
+@media (max-height:630px){.floating-title{padding:8px 11px}h1{font-size:14px}.floating-title p{font-size:10px}.dock{padding:9px 11px}.buttons .btn{min-height:37px}.hint{font-size:10px;margin-top:7px;padding-top:6px}.legend{display:none}}
+</style>
+</head>
+<body>
+<main>
+  <svg id="map" role="img" aria-label="タッチ操作の練習用ダミー地図。紫色の五角形の頂点を指で移動して範囲を変えられます。">
+    <defs>
+      <pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M26 0H0V26" fill="none" stroke="#dde8e4" stroke-width=".75"/></pattern>
+      <filter id="softshadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#143a43" flood-opacity=".22"/></filter>
+    </defs>
+    <rect id="mapbase" fill="#eef4ee" width="100%" height="100%"/>
+    <g id="viewport">
+      <rect id="gridfill" fill="url(#grid)"/>
+      <g id="streets"></g>
+      <g id="census"></g>
+      <g id="dots"></g>
+      <g id="areaOutline">
+        <polygon id="region" stroke="#7555c7" stroke-width="2.5" fill="#8467df" fill-opacity=".14" stroke-linejoin="round"/>
+        <g id="handles"></g>
+      </g>
+    </g>
+  </svg>
+  <header class="floating-title">
+    <div class="eyebrow">道の気配MAP · 操作だけの試作 v0.2</div>
+    <h1>囲む：最初から閉じた形を、指で動かす</h1>
+    <p>白い丸（頂点）をつまんで移動。紫色の内側を動かすと図形全体が移動します。背景や事故点は<strong>ダミー</strong>です。</p>
+  </header>
+  <div class="corner-keys"><button id="zoomIn" class="zoom" aria-label="拡大">＋</button><button id="zoomOut" class="zoom" aria-label="縮小">−</button></div>
+  <div class="legend"><span class="sample-dot"></span> 模擬事故点（集計値もダミー）</div>
+  <div class="dock-wrap"><section class="dock" aria-label="範囲選択の操作パネル">
+    <div class="dock-title"><strong id="panelTitle">多角形の形を決める</strong><span class="mode-note" id="modeNote">編集モード</span></div>
+    <div class="buttons">
+      <button class="btn selected" id="five" aria-pressed="true">5角形</button>
+      <button class="btn" id="six" aria-pressed="false">6角形</button>
+      <button class="btn secondary" id="reset">最初に戻す</button>
+    </div>
+    <div class="buttons" style="margin-top:7px;grid-template-columns:1fr 2fr">
+      <button class="btn secondary" id="undo" disabled>1つ戻す</button>
+      <button class="btn confirm" id="confirm">この範囲で確定</button>
+    </div>
+    <div class="summary"><span class="chip" id="count">模擬ドット：—</span><span class="chip" id="coord">頂点：5</span></div>
+    <p class="hint" id="hint">地図の拡大縮小をしても、選択した範囲の位置関係が保たれる動作を試せます。</p>
+  </section></div>
+</main>
+<script>
+(()=>{
+'use strict';
+const ns='http://www.w3.org/2000/svg';
+const svg=document.getElementById('map');
+const viewport=document.getElementById('viewport');
+const streetG=document.getElementById('streets');
+const censusG=document.getElementById('census');
+const dotsG=document.getElementById('dots');
+const handlesG=document.getElementById('handles');
+const region=document.getElementById('region');
+const countEl=document.getElementById('count');
+const hint=document.getElementById('hint');
+const note=document.getElementById('modeNote');
+const panelTitle=document.getElementById('panelTitle');
+const undo=document.getElementById('undo');
+const confirm=document.getElementById('confirm');
+const five=document.getElementById('five');const six=document.getElementById('six');
+let W=window.innerWidth,H=window.innerHeight;
+let center={x:W*.50,y:Math.max(190,Math.min(H*.42,H-260))};
+let radius=Math.min(92,W*.23,Math.max(56,(H-310)*.32));
+let vertices=[];let shapeN=5;let isConfirmed=false;let history=[];
+let zoom=1,pan={x:0,y:0};let active=null;
+const dotsR=[[-.52,-.55],[.24,-.66],[.59,-.28],[-.30,-.19],[.02,.13],[.39,.24],[.02,.61],[-.55,.41],[.65,.68],[-.71,.10],[.75,-.58]];
+let dots=[];
+const svgEl=(name,props,into)=>{const node=document.createElementNS(ns,name);for(const[k,v]of Object.entries(props||{}))node.setAttribute(k,v);(into||svg).appendChild(node);return node;};
+function makeStreet(x1,y1,x2,y2,width,offset=0){
+ const d=`M ${x1} ${y1} L ${x2} ${y2}`;
+ svgEl('path',{d,stroke:'#c9d6da','stroke-width':width+5,fill:'none','stroke-linecap':'round'},streetG);
+ svgEl('path',{d,stroke:'#fefdf8','stroke-width':width,fill:'none','stroke-linecap':'round'},streetG);
+ if(offset) svgEl('path',{d,stroke:'#f0d39a','stroke-width':Math.max(2,width*.15),'stroke-dasharray':'13 9',fill:'none'},censusG);
+}
+function drawMap(){
+ streetG.replaceChildren();censusG.replaceChildren();dotsG.replaceChildren();
+ const baseX=center.x,baseY=center.y;
+ makeStreet(-200,baseY-28,W+200,baseY+20,19,1);
+ makeStreet(baseX-125,-200,baseX-72,H+160,17);
+ makeStreet(baseX+130,-200,baseX+50,H+150,13,1);
+ makeStreet(-200,baseY+125,W+200,baseY+115,11);
+ makeStreet(baseX-180,-200,baseX+180,H+120,9);
+ dots=dotsR.map(([rx,ry],i)=>({x:baseX+rx*205,y:baseY+ry*160,type:i%3}));
+ for(const d of dots)svgEl('circle',{cx:d.x,cy:d.y,r:5.1,fill:['#e17a57','#4777bd','#369b82'][d.type],stroke:'#fff','stroke-width':'1.15','pointer-events':'none'},dotsG);
+ document.getElementById('gridfill').setAttribute('width',W*2);document.getElementById('gridfill').setAttribute('height',H*2);
+ document.getElementById('gridfill').setAttribute('x',-W*.5);document.getElementById('gridfill').setAttribute('y',-H*.5);
+}
+function regular(n){
+ shapeN=n;history=[];isConfirmed=false;
+ vertices=Array.from({length:n},(_,i)=>{let a=-Math.PI/2+2*Math.PI*i/n;return{x:center.x+radius*Math.cos(a),y:center.y+radius*Math.sin(a)};});
+ update();
+}
+function pointIn(x,y,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if(((a.y>y)!==(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x))inside=!inside;}return inside;}
+function update(){
+ viewport.setAttribute('transform',`translate(${pan.x} ${pan.y}) scale(${zoom})`);
+ region.setAttribute('points',vertices.map(p=>`${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' '));
+ region.setAttribute('stroke',isConfirmed?'#0f766e':'#7555c7');
+ region.setAttribute('fill',isConfirmed?'#34a38d':'#8467df');
+ region.style.cursor=isConfirmed?'default':'move';
+ handlesG.replaceChildren();
+ if(!isConfirmed){
+   vertices.forEach((p,i)=>{
+      const g=svgEl('g',{'data-handle':i,class:'handle',role:'button','aria-label':`頂点${i+1}を移動`},handlesG);
+      svgEl('circle',{cx:p.x,cy:p.y,r:24,fill:'#fff','fill-opacity':'0.015',stroke:'none'},g);
+      svgEl('circle',{cx:p.x,cy:p.y,r:9.6,fill:'#fff',stroke:'#7555c7','stroke-width':2.2,filter:'url(#softshadow)'},g);
+      svgEl('circle',{cx:p.x,cy:p.y,r:2.2,fill:'#7555c7'},g);
+   });
+ }
+ const n=dots.filter(p=>pointIn(p.x,p.y,vertices)).length;
+ countEl.textContent=`模擬ドット：${n}個`;
+ document.getElementById('coord').textContent=`頂点：${vertices.length}`;
+ undo.disabled=!history.length||isConfirmed;
+ five.classList.toggle('selected',shapeN===5);
+ six.classList.toggle('selected',shapeN===6);
+ five.setAttribute('aria-pressed',shapeN===5);six.setAttribute('aria-pressed',shapeN===6);
+ note.textContent=isConfirmed?'確定（仮）':'編集モード';
+ panelTitle.textContent=isConfirmed?'範囲を確定しました':'多角形の形を決める';
+ confirm.textContent=isConfirmed?'再び形を編集する':'この範囲で確定';
+ hint.textContent=isConfirmed?'確定後は形を固定しています。「再び形を編集する」で調整を続けられます。保存や実際の事故集計は行いません。':'白い頂点を動かす／内側で図形全体を動かす／図形の外では地図を動かす、という操作を試せます。';
+ }
+ const clone=()=>vertices.map(p=>({...p}));
+ function eventXY(e){const b=svg.getBoundingClientRect();return {x:e.clientX-b.left,y:e.clientY-b.top};}
+ function screenToWorld(s){return{x:(s.x-pan.x)/zoom,y:(s.y-pan.y)/zoom};}
+ function onDown(e){if(e.button!==undefined&&e.button!==0)return;
+  const s=eventXY(e),p=screenToWorld(s);
+  const hit=e.target.closest?.('[data-handle]');
+  let kind='pan';let index=-1;
+  if(hit&&!isConfirmed){kind='handle';index=Number(hit.dataset.handle);}
+  else if(e.target===region&&!isConfirmed){kind='polygon';}
+  active={id:e.pointerId,kind,index,at:s,original:clone(),prevPan:{...pan},moved:false};
+  svg.setPointerCapture(e.pointerId);
+  e.preventDefault();
+ }
+ function onMove(e){if(!active||e.pointerId!==active.id)return;
+  const s=eventXY(e),dx=s.x-active.at.x,dy=s.y-active.at.y;
+  if(Math.hypot(dx,dy)<1.8&&!active.moved)return;
+  active.moved=true;
+  if(active.kind==='pan'){pan={x:active.prevPan.x+dx,y:active.prevPan.y+dy};}
+  else if(active.kind==='handle'){
+     vertices[active.index]={x:active.original[active.index].x+dx/zoom,y:active.original[active.index].y+dy/zoom};
+  }else if(active.kind==='polygon'){
+     vertices=active.original.map(p=>({x:p.x+dx/zoom,y:p.y+dy/zoom}));
+  }
+  update();
+  e.preventDefault();
+ }
+ function onEnd(e){if(!active||e.pointerId!==active.id)return;
+  if(active.moved&&(active.kind==='handle'||active.kind==='polygon')){
+    history.push(active.original);if(history.length>20)history.shift();
+  }
+  active=null; update();e.preventDefault();
+ }
+ svg.addEventListener('pointerdown',onDown);
+ svg.addEventListener('pointermove',onMove);
+ svg.addEventListener('pointerup',onEnd);svg.addEventListener('pointercancel',onEnd);
+ function changeZoom(f){const factor=Math.max(.65,Math.min(2.8,zoom*f));const cx=W*.5,cy=Math.max(195,Math.min(H*.4,H-230));
+ const q=screenToWorld({x:cx,y:cy});zoom=factor;pan={x:cx-q.x*zoom,y:cy-q.y*zoom};update();}
+ document.getElementById('zoomIn').addEventListener('click',()=>changeZoom(1.25));
+ document.getElementById('zoomOut').addEventListener('click',()=>changeZoom(1/1.25));
+ five.addEventListener('click',()=>regular(5));six.addEventListener('click',()=>regular(6));
+ document.getElementById('reset').addEventListener('click',()=>{zoom=1;pan={x:0,y:0};regular(shapeN);});
+ undo.addEventListener('click',()=>{if(history.length&&!isConfirmed){vertices=history.pop();update();}});
+ confirm.addEventListener('click',()=>{if(vertices.length<3)return;isConfirmed=!isConfirmed;update();});
+ window.addEventListener('resize',()=>{const ow=W,oh=H;W=window.innerWidth;H=window.innerHeight;const sx=W/ow,sy=H/oh;center={x:center.x*sx,y:center.y*sy};vertices=vertices.map(p=>({x:p.x*sx,y:p.y*sy}));pan={x:pan.x*sx,y:pan.y*sy};drawMap();update();});
+ drawMap();regular(5);
+})();
+</script>
+</body>
+</html>
