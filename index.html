@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#eaf2f0" />
-<title>道の気配MAP｜統合操作プレート試作 v0.3</title>
+<title>道の気配MAP｜統合操作プレート試作 v0.3.1</title>
 <style>
 :root{--ink:#193d42;--muted:#637a80;--teal:#08776e;--teal-bg:#dbf2ed;--edge:#d2e0df;--surface:#ffffffed;--purple:#694bb8;--purple-bg:#eee9ff;--shadow:0 7px 26px #153e3d2a;--safe:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}html,body{height:100%;margin:0;overscroll-behavior:none}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Noto Sans JP",sans-serif;background:#eaf2f0;color:var(--ink)}
@@ -22,8 +22,21 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
 .density label{min-width:0;display:grid;grid-template-columns:18px 1fr auto;align-items:center;column-gap:4px;row-gap:1px;font-size:10px;font-weight:750}.density label .glyph{font-size:13px}.density label output{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}.density input{grid-column:1 / -1;width:100%;margin:1px 0 0;accent-color:var(--teal);height:16px;min-width:0}.density label.disabled{opacity:.4}.density .hintline{grid-column:1 / -1;font-size:9px;color:var(--muted);text-align:center;margin:-2px 0 0;display:none}
 .dock{background:#fffffff2;border:1px solid #c4dad8;border-radius:18px;box-shadow:var(--shadow);padding:7px;backdrop-filter:blur(12px);display:flex;align-items:center;gap:5px;min-height:65px}.dockbtn{border:1px solid transparent;border-radius:11px;background:transparent;min-width:0;flex:1;height:49px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;color:var(--ink);font-size:10.5px;font-weight:800}.dockbtn span:first-child{font-size:19px;line-height:1.1}.dockbtn[aria-pressed=true]{background:var(--teal-bg);border-color:#9dd5cd;color:#095c54}.dock-divider{height:39px;border-left:1px solid var(--edge);margin:0 2px}.dockbtn.special{max-width:47px;background:#f7f9fc;border:1px solid #e2e9ed}.dockbtn.special[aria-pressed=true]{background:#f1eaff;border-color:#cbb8fb;color:#6636a0}
 /* stacked cards keep navigation context visibly reachable; current card is topmost */
-.cardgroup{position:relative;margin:0 2px 1px;filter:drop-shadow(0 7px 18px #153e3d20);display:none}.cardgroup.open{display:block;animation:appear .16s ease-out}.cardgroup:before{content:"";position:absolute;inset:-7px 10px 9px;border-radius:16px 16px 0 0;background:#c5d8d8;border:1px solid #b3cccc;z-index:-2}.cardgroup.deeper:after{content:"";position:absolute;inset:-13px 20px 10px;border-radius:14px;background:#dbe5e5;border:1px solid #c8d5d5;z-index:-3}
-@keyframes appear{from{opacity:.5;transform:translateY(9px)}to{opacity:1;transform:none}}
+.cardgroup{position:relative;margin:0 2px 1px;filter:drop-shadow(0 7px 18px #153e3d20);display:none}.cardgroup.open{display:block;animation:appear .52s cubic-bezier(.22,1,.36,1) both;transform-origin:center bottom}.cardgroup:before{content:"";position:absolute;inset:-7px 10px 9px;border-radius:16px 16px 0 0;background:#c5d8d8;border:1px solid #b3cccc;z-index:-2}.cardgroup.deeper:after{content:"";position:absolute;inset:-13px 20px 10px;border-radius:14px;background:#dbe5e5;border:1px solid #c8d5d5;z-index:-3}
+@keyframes appear{from{opacity:.13;transform:translateY(24px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes contentSlide{from{opacity:.1;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+.cardbody.reveal{animation:contentSlide .46s cubic-bezier(.22,1,.36,1) both}
+.cardbody.compact{max-height:min(39dvh,248px)}
+.cardbody.compact .explain{margin:0 0 5px;font-size:10px;line-height:1.25}
+.cardbody.compact .actions{gap:5px}
+.cardbody.compact .act{flex:1 1 0;min-width:0;min-height:36px;padding:5px 4px;font-size:11px}
+.cardbody.compact .ctop{margin-bottom:5px}
+.cardbody.compact .status{margin-top:5px}
+.shape-clear{position:absolute;right:12px;top:calc(max(12px, env(safe-area-inset-top)) + 95px);z-index:6;background:#fff7f4;border:1px solid #eac6b8;color:#93422f;border-radius:11px;padding:9px 11px;font-size:12px;font-weight:800;box-shadow:0 4px 12px #153e3d20}
+.shape-clear[hidden]{display:none}
+.toast.show{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+.toast button{border-radius:8px;background:#fff;border:0;color:#155b55;font-weight:850;padding:7px 9px;min-height:36px;pointer-events:auto}
+@media (max-height:650px){.cardbody.compact{max-height:min(36dvh,228px)}}
 .breadcrumb{display:flex;gap:5px;align-items:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:7px 8px 6px;border:1px solid var(--edge);background:#e8f0ef;border-radius:13px 13px 0 0;white-space:nowrap}.breadcrumb button{border:1px solid #d1dfdd;color:#486b70;background:#f7fbfa;border-radius:7px;font-size:10px;font-weight:700;padding:5px 8px;flex:none}.breadcrumb button:last-child{background:#fff;border-color:#8ebfb7;color:#0e625a}.breadcrumb .arrow{color:#899da0;font-size:10px}
 .cardbody{background:var(--surface);border:1px solid var(--edge);border-top:none;border-radius:0 0 16px 16px;padding:11px;max-height:min(33dvh,260px);overflow:auto;overscroll-behavior:contain}.ctop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}.ctop strong{font-size:13px}.ctop .close{border:1px solid var(--edge);background:#fff;border-radius:8px;font-size:11px;font-weight:700;padding:5px 8px;color:var(--muted)}.explain{font-size:11px;color:#48666a;line-height:1.55;margin:4px 0 9px}.actions{display:flex;gap:6px;flex-wrap:wrap}.act{flex:1 1 90px;min-width:0;min-height:39px;border:1px solid var(--edge);background:#fff;border-radius:10px;font-size:11px;font-weight:800;color:var(--ink);padding:6px}.act.selected{background:var(--teal-bg);border-color:#83cabf;color:#075d54}.act.primary{background:var(--teal);border-color:var(--teal);color:#fff}.act.purple{background:var(--purple-bg);border-color:#bca7ee;color:#5b37aa}.miniNote{font-size:10px;color:var(--muted);line-height:1.5;margin:7px 0 0}.pillrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}.pill{background:#edf3f3;border-radius:7px;padding:4px 7px;font-size:10px;color:#446168}.err{color:#a23d26}.status{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10px;color:#49696c;margin-top:7px}.status strong{color:#0c7268;font-size:11px}.hdiv{height:1px;background:var(--edge);margin:8px 0}
 .toggle{display:flex;gap:7px;align-items:center;border:1px solid #e1e8e8;border-radius:10px;background:white;padding:7px 9px;margin:5px 0;font-size:11px;font-weight:700}.toggle input{accent-color:var(--teal);width:16px;height:16px;margin:0}.top-switch{font-size:10px;border:1px solid var(--edge);background:#fff;border-radius:7px;padding:5px 6px;color:var(--ink);white-space:nowrap;font-weight:750;margin-top:4px}
@@ -44,8 +57,9 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
   <rect width="100%" height="100%" fill="#f0f5f1" />
   <g id="world"><g id="baseLayer"><rect id="gridRect" fill="url(#grid)"/><g id="streets"/></g><g id="census"/><g id="dots"/><g id="donuts"/><g id="regionLayer" style="display:none"><polygon id="region" fill="#8164ce" fill-opacity=".12" stroke="#7552c2" stroke-width="2.5" stroke-linejoin="round"/><g id="handles"/></g></g>
  </svg>
- <header class="tophead"><div class="eyebrow">道の気配MAP｜統合操作プレート試作 v0.3</div><h1>階層をたどり、地図を触る</h1><p>画面は<strong>模擬地図</strong>です。事故点・集計値・交通量は架空。Viewer本体と接続していません。</p><button class="top-switch" id="switchView">一覧型UIに切替（比較）</button></header>
+ <header class="tophead"><div class="eyebrow">道の気配MAP｜統合操作プレート試作 v0.3.1</div><h1>階層をたどり、地図を触る</h1><p>画面は<strong>模擬地図</strong>です。事故点・集計値・交通量は架空。Viewer本体と接続していません。</p><button class="top-switch" id="switchView">一覧型UIに切替（比較）</button></header>
  <div class="zooms"><button id="zoomPlus" title="拡大" aria-label="地図を拡大">＋</button><button id="zoomMinus" title="縮小" aria-label="地図を縮小">−</button></div>
+ <button id="shapeDismiss" class="shape-clear" type="button" hidden aria-label="表示中の範囲を確定せずに消す">× 範囲を消す</button>
  <div class="viewport-hint" id="mapHint">「囲む」を押すと、閉じた5角形が出現します。白い頂点を指で動かせます。</div>
  <div class="sampleLabel">● 模擬事故点／線は模擬道路交通量</div>
  <div class="bottomlayout" id="bottomlayout"><div class="controlzone">
@@ -68,6 +82,7 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
    <h2>一覧型UI（比較用）</h2><p>同じ地図状態と操作機能を、メニュー一覧で利用します。現行Viewerのサイドバーそのものではありません。</p>
    <div class="subhead">見る</div><div class="actions"><button class="act" data-action="individual">個別事故点</button><button class="act" data-action="donut">集計表示</button></div>
    <div class="subhead">囲む</div><div class="actions"><button class="act" data-action="begin5">5角形を表示</button><button class="act" data-action="begin6">6角形を表示</button><button class="act" data-action="polygonEdit">編集する</button><button class="act" data-action="confirm">確定</button><button class="act" data-action="undo">1つ戻す</button></div>
+   <div class="actions"><button class="act" data-action="clearPolygon">× 範囲を消す（確定不要）</button></div>
    <div class="subhead">AI読み</div><div class="actions"><button class="act" data-action="ai">AIに渡す文章を見る</button></div>
    <div class="subhead">表示レイヤー</div><label class="toggle"><input type="checkbox" id="sideCensus" data-layer="census" checked>道路交通センサス（模擬）</label><label class="toggle"><input type="checkbox" id="sideDots" data-layer="dots" checked>事故点・集計（模擬）</label>
    <div class="subhead">残す・共有する</div><div class="actions"><button class="act" data-action="save">保存の案内</button><button class="act" data-action="share">共有の案内</button></div>
@@ -84,6 +99,7 @@ const cardgroup=by('cardgroup'),cardbody=by('cardbody'),breadcrumb=by('breadcrum
 let W=innerWidth,H=innerHeight, zoom=1,pan={x:0,y:0};
 let center={x:W*.5,y:Math.max(166,Math.min(H*.34,H-435))},radius=Math.max(48,Math.min(90,W*.225,(H-500)*.36));
 let vertices=[],shapeN=5,polygonVisible=false,confirmed=false,undoStack=[],pointerDrag=null,touches=new Map(),pinch=null;
+let lastDeleted=null,autoPanTimer=0,autoPanFlight=0;
 let nav=[],listMode=false,viewMode='individual',filter='all',show={census:true,dots:true};
 const sampleOffsets=[[-.54,-.51],[.21,-.71],[.67,-.33],[-.35,-.21],[.07,.12],[.4,.28],[.06,.62],[-.61,.37],[.69,.71],[-.75,.07],[.75,-.59],[-.14,-.62],[.31,-.12],[-.2,.42],[-.87,-.57]];
 let sampleDots=[];
@@ -107,21 +123,69 @@ function buildMap(){
 }
 function refreshLayers(){by('baseLayer').style.opacity=Number(by('mapDensity').value)/100;census.style.opacity=Number(by('censusDensity').value)/100;census.style.display=show.census?'':'none';by('censusOpacityLabel').classList.toggle('disabled',!show.census);by('censusDensity').disabled=!show.census;dotsG.style.display=(viewMode==='individual'&&show.dots)?'':'none';donuts.style.display=(viewMode==='donut'&&show.dots)?'':'none';sampleDots.forEach((d,i)=>{const node=dotsG.children[i];if(node)node.style.opacity=(filter==='all'||(filter==='person'&&d.t===0)||(filter==='vehicles'&&d.t===1)||(filter==='bicycle'&&d.t===2))?'1':'.14'});by('mapValue').textContent=by('mapDensity').value+'%';by('censusValue').textContent=by('censusDensity').value+'%';
  document.querySelectorAll('[data-layer]').forEach(input=>input.checked=show[input.dataset.layer]);}
-function initialVertices(n){shapeN=n;polygonVisible=true;confirmed=false;undoStack=[];vertices=Array.from({length:n},(_,i)=>{const a=-Math.PI/2+2*Math.PI*i/n;return{x:center.x+radius*Math.cos(a),y:center.y+radius*Math.sin(a)}});updatePolygon();}
+function initialVertices(n){lastDeleted=null;shapeN=n;polygonVisible=true;confirmed=false;undoStack=[];vertices=Array.from({length:n},(_,i)=>{const a=-Math.PI/2+2*Math.PI*i/n;return{x:center.x+radius*Math.cos(a),y:center.y+radius*Math.sin(a)}});updatePolygon();}
 function contained(x,y,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if(((a.y>y)!==(b.y>y))&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)c=!c;}return c}
 function mockCount(){if(!polygonVisible)return 0;return sampleDots.filter(d=>contained(d.x,d.y,vertices)).length;}
-function updatePolygon(){by('mapHint').style.display=polygonVisible?'none':'';const editing=polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav[1]==='edit';world.setAttribute('transform',`translate(${pan.x} ${pan.y}) scale(${zoom})`);regionLayer.style.display=polygonVisible?'':'none';if(!polygonVisible)return;region.setAttribute('points',vertices.map(v=>`${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' '));region.setAttribute('stroke',confirmed?'#0f766e':'#7755c7');region.setAttribute('fill',confirmed?'#44a58f':'#8164ce');handles.replaceChildren();if(editing){vertices.forEach((p,i)=>{let g=el('g',{'data-handle':i,class:'handle'},handles);el('circle',{cx:p.x,cy:p.y,r:24,fill:'#fff','fill-opacity':'.015'},g);el('circle',{cx:p.x,cy:p.y,r:9.5,fill:'#fff',stroke:'#7755c7','stroke-width':2.25,filter:'url(#hshadow)'},g);el('circle',{cx:p.x,cy:p.y,r:2.2,fill:'#7755c7'},g)})}}
+function updatePolygon(){by('mapHint').style.display=polygonVisible?'none':'';by('shapeDismiss').hidden=!polygonVisible;const editing=polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav[1]==='edit';world.setAttribute('transform',`translate(${pan.x} ${pan.y}) scale(${zoom})`);regionLayer.style.display=polygonVisible?'':'none';if(!polygonVisible)return;region.setAttribute('points',vertices.map(v=>`${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' '));region.setAttribute('stroke',confirmed?'#0f766e':'#7755c7');region.setAttribute('fill',confirmed?'#44a58f':'#8164ce');handles.replaceChildren();if(editing){vertices.forEach((p,i)=>{let g=el('g',{'data-handle':i,class:'handle'},handles);el('circle',{cx:p.x,cy:p.y,r:24,fill:'#fff','fill-opacity':'.015'},g);el('circle',{cx:p.x,cy:p.y,r:9.5,fill:'#fff',stroke:'#7755c7','stroke-width':2.25,filter:'url(#hshadow)'},g);el('circle',{cx:p.x,cy:p.y,r:2.2,fill:'#7755c7'},g)})}}
 const clone=()=>vertices.map(p=>({...p}));
 const xy=e=>{const b=svg.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top}};
 function worldXY(s){return{x:(s.x-pan.x)/zoom,y:(s.y-pan.y)/zoom}}
-function pointerDown(e){if(e.button!==undefined&&e.button!==0)return;const s=xy(e);touches.set(e.pointerId,s);if(touches.size===2){pointerDrag=null;const vals=[...touches.values()];pinch={dist:Math.hypot(vals[0].x-vals[1].x,vals[0].y-vals[1].y),zoom,pan:{...pan},worldPt:worldXY({x:(vals[0].x+vals[1].x)/2,y:(vals[0].y+vals[1].y)/2})};}else if(touches.size===1){const h=e.target.closest?.('[data-handle]');let kind='pan',index=-1;if(polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav[1]==='edit'&&h){kind='vertex';index=+h.dataset.handle;}else if(polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav[1]==='edit'&&e.target===region){kind='shape';}pointerDrag={id:e.pointerId,start:s,kind,index,vertices:clone(),pan:{...pan},moved:false};}svg.setPointerCapture(e.pointerId);e.preventDefault();}
+function pointerDown(e){if(e.button!==undefined&&e.button!==0)return;cancelAutoPan();const s=xy(e);touches.set(e.pointerId,s);if(touches.size===2){pointerDrag=null;const vals=[...touches.values()];pinch={dist:Math.hypot(vals[0].x-vals[1].x,vals[0].y-vals[1].y),zoom,pan:{...pan},worldPt:worldXY({x:(vals[0].x+vals[1].x)/2,y:(vals[0].y+vals[1].y)/2})};}else if(touches.size===1){const h=e.target.closest?.('[data-handle]');let kind='pan',index=-1;if(polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav[1]==='edit'&&h){kind='vertex';index=+h.dataset.handle;}else if(polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav[1]==='edit'&&e.target===region){kind='shape';}pointerDrag={id:e.pointerId,start:s,kind,index,vertices:clone(),pan:{...pan},moved:false};}svg.setPointerCapture(e.pointerId);e.preventDefault();}
 function pointerMove(e){if(!touches.has(e.pointerId))return;const s=xy(e);touches.set(e.pointerId,s);if(touches.size===2&&pinch){const vals=[...touches.values()],mid={x:(vals[0].x+vals[1].x)/2,y:(vals[0].y+vals[1].y)/2};const d=Math.hypot(vals[0].x-vals[1].x,vals[0].y-vals[1].y);zoom=Math.max(.6,Math.min(3.1,pinch.zoom*d/Math.max(1,pinch.dist)));pan={x:mid.x-pinch.worldPt.x*zoom,y:mid.y-pinch.worldPt.y*zoom};updatePolygon();e.preventDefault();return;}if(!pointerDrag||pointerDrag.id!==e.pointerId)return;const dx=s.x-pointerDrag.start.x,dy=s.y-pointerDrag.start.y;if(Math.hypot(dx,dy)<1.3&&!pointerDrag.moved)return;pointerDrag.moved=true;if(pointerDrag.kind==='pan'){pan={x:pointerDrag.pan.x+dx,y:pointerDrag.pan.y+dy};}else if(pointerDrag.kind==='vertex'){vertices[pointerDrag.index]={x:pointerDrag.vertices[pointerDrag.index].x+dx/zoom,y:pointerDrag.vertices[pointerDrag.index].y+dy/zoom};}else{vertices=pointerDrag.vertices.map(p=>({x:p.x+dx/zoom,y:p.y+dy/zoom}));}updatePolygon();if((pointerDrag.kind==='vertex'||pointerDrag.kind==='shape')&&nav[0]==='polygon')refreshDynamicText();e.preventDefault();}
 function pointerEnd(e){if(!touches.has(e.pointerId))return;touches.delete(e.pointerId);if(pointerDrag&&pointerDrag.id===e.pointerId&&pointerDrag.moved&&(pointerDrag.kind==='vertex'||pointerDrag.kind==='shape')){undoStack.push(pointerDrag.vertices);if(undoStack.length>25)undoStack.shift();}pointerDrag=null;if(touches.size<2)pinch=null;updatePolygon();refreshDynamicText();e.preventDefault();}
 svg.addEventListener('pointerdown',pointerDown);svg.addEventListener('pointermove',pointerMove);svg.addEventListener('pointerup',pointerEnd);svg.addEventListener('pointercancel',pointerEnd);svg.addEventListener('lostpointercapture',pointerEnd);
-function changeZoom(mult){const tx=W*.5,ty=H*.37,p=worldXY({x:tx,y:ty});zoom=Math.max(.6,Math.min(3.1,zoom*mult));pan={x:tx-p.x*zoom,y:ty-p.y*zoom};updatePolygon()}
+function changeZoom(mult){cancelAutoPan();const tx=W*.5,ty=H*.37,p=worldXY({x:tx,y:ty});zoom=Math.max(.6,Math.min(3.1,zoom*mult));pan={x:tx-p.x*zoom,y:ty-p.y*zoom};updatePolygon()}
 by('zoomPlus').onclick=()=>changeZoom(1.25);by('zoomMinus').onclick=()=>changeZoom(1/1.25);
 function setView(mode){viewMode=mode;refreshLayers();toast(mode==='individual'?'個別事故点へ切替（模擬）':'集計表示へ切替（模擬）');render();}
-function toast(s){let t=by('toast');t.textContent=s;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2100)}
+function toast(s,allowRestore=false){
+ const t=by('toast');t.replaceChildren(document.createTextNode(s));
+ if(allowRestore){const b=document.createElement('button');b.type='button';b.textContent='↶ 元に戻す';b.addEventListener('click',restoreDeleted);t.append(b);}
+ t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),allowRestore?6000:2100);
+}
+function clearPolygon(){
+ if(!polygonVisible){toast('表示中の範囲はありません');return;}
+ cancelAutoPan();
+ lastDeleted={vertices:clone(),shapeN,confirmed};
+ vertices=[];polygonVisible=false;confirmed=false;undoStack=[];
+ nav=[];updatePolygon();render();
+ toast('表示中の範囲を消しました',true);
+}
+function restoreDeleted(){
+ if(!lastDeleted)return;
+ const r=lastDeleted;lastDeleted=null;
+ vertices=r.vertices.map(p=>({...p}));shapeN=r.shapeN;polygonVisible=true;confirmed=r.confirmed;undoStack=[];
+ showCard(['polygon',confirmed?'result':'edit']);
+ toast('範囲を元に戻しました');
+}
+function cancelAutoPan(){if(autoPanTimer)cancelAnimationFrame(autoPanTimer);if(autoPanFlight)cancelAnimationFrame(autoPanFlight);autoPanTimer=0;autoPanFlight=0;}
+function keepPolygonInView(){
+ if(!polygonVisible||pointerDrag||touches.size||listMode)return;
+ const control=by('bottomlayout').getBoundingClientRect();
+ const head=document.querySelector('.tophead').getBoundingClientRect();
+ const top=Math.max(20,head.bottom+12),bottom=control.top-18;
+ if(bottom-top<90)return;
+ const points=vertices.map(v=>({x:v.x*zoom+pan.x,y:v.y*zoom+pan.y}));
+ const x0=Math.min(...points.map(v=>v.x)),x1=Math.max(...points.map(v=>v.x));
+ const y0=Math.min(...points.map(v=>v.y)),y1=Math.max(...points.map(v=>v.y));
+ const l=22,r=W-22,margin=22;
+ let dx=0,dy=0;
+ if(x1-x0<=r-l-2*margin){if(x0<l+margin)dx=l+margin-x0;else if(x1>r-margin)dx=r-margin-x1;}
+ if(y1-y0<=bottom-top-2*margin){if(y0<top+margin)dy=top+margin-y0;else if(y1>bottom-margin)dy=bottom-margin-y1;}
+ else if(y0<top || y1>bottom){dy=(top+bottom-y0-y1)/2;}
+ if(Math.abs(dx)<1 && Math.abs(dy)<1)return;
+ const start={...pan},beg=performance.now();const duration=390;
+ function flight(now){if(pointerDrag||touches.size){autoPanFlight=0;return;}
+  const t=Math.min(1,(now-beg)/duration),e=1-Math.pow(1-t,3);
+  pan={x:start.x+dx*e,y:start.y+dy*e};updatePolygon();
+  autoPanFlight=t<1?requestAnimationFrame(flight):0;
+ }
+ cancelAutoPan();autoPanFlight=requestAnimationFrame(flight);
+}
+function scheduleKeepPolygonInView(){
+ if(!polygonVisible||listMode)return;
+ if(autoPanTimer)cancelAnimationFrame(autoPanTimer);
+ autoPanTimer=requestAnimationFrame(()=>{autoPanTimer=0;keepPolygonInView();});
+}
 const names={see:'見る',individual:'個別事故点',donut:'集計',polygon:'囲む',edit:'範囲を動かす',result:'範囲の結果',ai:'AI読み',layers:'重ねる',save:'保存',share:'共有'};
 function showCard(path){nav=path;render();}
 function chooseRoot(root){if(nav[0]===root){nav=[];render();return;}if(root==='polygon'){if(!polygonVisible)initialVertices(5);showCard(['polygon','edit']);by('mapHint').textContent='白い頂点を動かして変形。図形の内側は全体移動、外側は地図をドラッグできます。';return;}if(root==='ai'&&!confirmed){showCard(['ai']);return;}showCard([root]);}
@@ -135,8 +199,8 @@ function cardContent(){const [root,child]=nav;
  if(root==='see'&&child==='individual')return topLine('個別事故点')+`<p class="explain">模擬事故点を表示中。種類の絞り込みを試せます。</p>${filterButtons()}<p class="miniNote">薄い点は絞り込み対象外の例です。実際の事故データはありません。</p>`;
  if(root==='see'&&child==='donut')return topLine('集計表示')+`<p class="explain">模擬ドーナツで俯瞰します。詳細な指標選択は将来のViewer接続時に評価します。</p><div class="actions">${btn('個別事故点に戻す','individual')}${btn('囲んで調べる','polygon')}</div><p class="miniNote">集計件数は架空の表示です。</p>`;
  if(root==='polygon'&&!child)return topLine('囲む｜範囲選択')+`<p class="explain">閉じた5角形・6角形から、形を選んで指で調整します。</p><div class="actions">${btn('5角形から始める','begin5','selected')}${btn('6角形から始める','begin6')}${polygonVisible?btn('現在の形を編集','reedit'):''}</div>`;
- if(root==='polygon'&&child==='edit')return topLine('囲む｜形を動かす')+`<p class="explain">白い丸をドラッグ → 頂点移動。内側をドラッグ → 全体移動。</p><div class="actions">${btn('5角形','begin5',shapeN===5?'selected':'')}${btn('6角形','begin6',shapeN===6?'selected':'')}${btn('1つ戻す','undo','',undoStack.length?'':'disabled')}</div><div class="actions" style="margin-top:6px">${btn('形を初期化','reset')}${btn('この範囲で確定','confirm','primary')}</div><div class="status"><span>頂点 ${shapeN}個</span><strong id="liveCount">模擬点 ${mockCount()}個</strong></div>`;
- if(root==='polygon'&&child==='result')return topLine('囲んだ範囲｜確定')+`<p class="explain">選択した範囲を仮確定しました。模擬点：<strong>${mockCount()}個</strong>（試作の架空値）。</p><div class="actions">${btn('形を再編集','reedit')}${btn('AI読みへ','ai','primary')}</div><p class="miniNote">実際の事故分析・保存は行いません。形は画面上に残ります。</p>`;
+ if(root==='polygon'&&child==='edit')return topLine('囲む｜形を動かす')+`<p class="explain">白い頂点・図形全体をドラッグできます。</p><div class="actions">${btn('5角形','begin5',shapeN===5?'selected':'')}${btn('6角形','begin6',shapeN===6?'selected':'')}${btn('↶ 戻す','undo','',undoStack.length?'':'disabled')}</div><div class="actions" style="margin-top:5px">${btn('形を初期化','reset')}${btn('この範囲で確定','confirm','primary')}</div><div class="status"><span>頂点 ${shapeN}個</span><strong id="liveCount">模擬点 ${mockCount()}個</strong></div>`;
+ if(root==='polygon'&&child==='result')return topLine('囲んだ範囲｜確定')+`<p class="explain">模擬点：<strong>${mockCount()}個</strong>（架空値）。</p><div class="actions">${btn('形を再編集','reedit')}${btn('AI読みへ','ai','primary')}</div><p class="miniNote">範囲を消す場合は、地図右上の「× 範囲を消す」を使えます。</p>`;
  if(root==='ai')return topLine('AIに読んでもらう')+(confirmed?`<p class="explain">確定済み範囲から、AIに渡す文章の試作を表示します。</p><textarea id="aiText" aria-label="AIに渡す模擬文章" style="width:100%;height:94px;resize:vertical;border:1px solid var(--edge);border-radius:9px;padding:7px;font-size:11px">${aiPrompt()}</textarea><div class="actions">${btn('文章をコピー','copyAI','primary')}${btn('範囲を再編集','reedit')}</div>`:`<p class="explain">先に「囲む」で範囲を確定してください。確定後に文章のコピーができます。</p><div class="actions">${btn('囲むへ進む','polygon','primary')}</div>`)+`<p class="miniNote">実際のAIへ自動送信しません。文章・集計は模擬です。</p>`;
  if(root==='layers')return topLine('地図に重ねる情報')+`<p class="explain">表示のON/OFFのみ。濃度は下の独立バーで調整します。</p>${layerToggles()}<p class="miniNote">本体Viewerには行政参照・施設・環境PoCなどのレイヤーがありますが、ここでは再現していません。</p>`;
  if(root==='save')return topLine('A｜自分用に保存')+`<p class="explain">これは特別操作の入口を試す画面です。実際には範囲や個人メモの保存を扱います。</p><div class="actions">${btn('保存の疑似実行','demoSave','purple')}</div><p class="miniNote">JSON保存、ブラウザ保存、読み込みは行いません。</p>`;
@@ -144,7 +208,7 @@ function cardContent(){const [root,child]=nav;
  return topLine('操作プレート')+`<p class="explain">下の操作を選んでください。</p>`;
 }
 function render(){updatePolygon();const open=nav.length>0;cardgroup.classList.toggle('open',open);cardgroup.classList.toggle('deeper',nav.length>1);by('bottomlayout').style.display=listMode?'none':'';by('listview').classList.toggle('open',listMode);by('switchView').textContent=listMode?'プレート型UIに戻る':'一覧型UIに切替（比較）';document.querySelectorAll('[data-root]').forEach(b=>b.setAttribute('aria-pressed',nav[0]===b.dataset.root?'true':'false'));if(!open)return;
- breadcrumb.innerHTML=`<button data-back="0">操作プレート</button>`+nav.map((k,i)=>`<span class="arrow">›</span><button data-back="${i+1}">${names[k]||k}</button>`).join('');cardbody.innerHTML=cardContent();refreshDynamicText();}
+ breadcrumb.innerHTML=`<button data-back="0">操作プレート</button>`+nav.map((k,i)=>`<span class="arrow">›</span><button data-back="${i+1}">${names[k]||k}</button>`).join('');cardbody.innerHTML=cardContent();cardbody.classList.toggle('compact',nav[0]==='polygon'&&nav[1]==='edit');cardbody.scrollTop=0;cardbody.classList.remove('reveal');void cardbody.offsetWidth;cardbody.classList.add('reveal');refreshDynamicText();scheduleKeepPolygonInView();}
 function refreshDynamicText(){let label=by('liveCount');if(label)label.textContent=`模擬点 ${mockCount()}個`;}
 async function copyText(value){try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value);toast('模擬文章をコピーしました');return;}}catch(e){}const t=by('aiText');if(t){t.focus();t.select();const ok=document.execCommand?.('copy');toast(ok?'模擬文章をコピーしました':'文章を選択しました。手動でコピーしてください');}else toast('コピー機能が利用できません');}
 function action(code){
@@ -154,6 +218,7 @@ function action(code){
  if(code==='begin5'||code==='begin6'){initialVertices(code==='begin5'?5:6);showCard(['polygon','edit']);return;}
  if(code==='undo'){if(undoStack.length&&!confirmed){vertices=undoStack.pop();updatePolygon();render();}return;}
  if(code==='reset'){initialVertices(shapeN);showCard(['polygon','edit']);return;}
+ if(code==='clearPolygon'){clearPolygon();return;}
  if(code==='confirm'){if(!polygonVisible){initialVertices(5);}confirmed=true;updatePolygon();showCard(['polygon','result']);toast('模擬範囲を確定しました');return;}
  if(code==='reedit'){if(!polygonVisible)initialVertices(5);confirmed=false;updatePolygon();showCard(['polygon','edit']);return;}
  if(code==='ai'){showCard(['ai']);return;}
@@ -164,11 +229,12 @@ function action(code){
  if(code==='save'||code==='share'){showCard([code]);return;}
  if(code==='closeList'){listMode=false;render();return;}
 }
+by('shapeDismiss').addEventListener('click',clearPolygon);
 document.addEventListener('click',e=>{const root=e.target.closest('[data-root]');if(root){chooseRoot(root.dataset.root);return;}const back=e.target.closest('[data-back]');if(back){const idx=Number(back.dataset.back);nav=nav.slice(0,idx);render();return;}const act=e.target.closest('[data-action]');if(act){action(act.dataset.action);return;}});
 document.addEventListener('change',e=>{const v=e.target.closest('[data-layer]');if(v){show[v.dataset.layer]=v.checked;refreshLayers();render();}});
 by('mapDensity').addEventListener('input',refreshLayers);by('censusDensity').addEventListener('input',refreshLayers);
 by('switchView').onclick=()=>{listMode=!listMode;nav=[];const head=document.querySelector('.tophead').getBoundingClientRect();by('listview').style.top=Math.ceil(head.bottom+8)+'px';by('listview').style.maxHeight=`calc(100dvh - ${Math.ceil(head.bottom+21)}px)`;render()};
-addEventListener('resize',()=>{const oldW=W,oldH=H;W=innerWidth;H=innerHeight;const sx=W/oldW,sy=H/oldH;center={x:center.x*sx,y:center.y*sy};vertices=vertices.map(p=>({x:p.x*sx,y:p.y*sy}));undoStack=undoStack.map(arr=>arr.map(p=>({x:p.x*sx,y:p.y*sy})));pan={x:pan.x*sx,y:pan.y*sy};radius=Math.max(48,Math.min(90,W*.225,(H-500)*.36));buildMap();updatePolygon();render()});
+addEventListener('resize',()=>{cancelAutoPan();const oldW=W,oldH=H;W=innerWidth;H=innerHeight;const sx=W/oldW,sy=H/oldH;center={x:center.x*sx,y:center.y*sy};vertices=vertices.map(p=>({x:p.x*sx,y:p.y*sy}));undoStack=undoStack.map(arr=>arr.map(p=>({x:p.x*sx,y:p.y*sy})));pan={x:pan.x*sx,y:pan.y*sy};radius=Math.max(48,Math.min(90,W*.225,(H-500)*.36));buildMap();updatePolygon();render();scheduleKeepPolygonInView()});
 // Initial state: panel closed, no polygon; opening 囲む instantiates the preclosed pentagon.
 buildMap();refreshLayers();updatePolygon();render();
 })();
