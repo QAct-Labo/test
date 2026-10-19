@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#eaf2f0" />
-<title>道の気配MAP｜統合操作プレート試作 v0.3.4</title>
+<title>道の気配MAP｜統合操作プレート試作 v0.3.5</title>
 <style>
 :root{--ink:#193d42;--muted:#637a80;--teal:#08776e;--teal-bg:#dbf2ed;--edge:#d2e0df;--surface:#ffffffed;--purple:#694bb8;--purple-bg:#eee9ff;--shadow:0 7px 26px #153e3d2a;--safe:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}html,body{height:100%;margin:0;overscroll-behavior:none}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Noto Sans JP",sans-serif;background:#eaf2f0;color:var(--ink)}
@@ -65,6 +65,34 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
 @media (max-width:390px){.dock{padding:5px;gap:2px}.dockbtn{font-size:10px}.dockbtn.special{max-width:39px}.dockbtn span:first-child{font-size:17px}.cardbody{max-height:32dvh;padding:9px}.density{padding:5px 8px;gap:5px}.tophead{max-width:calc(100vw - 76px);padding:7px 10px}.tophead h1{font-size:12px}.tophead p{font-size:9px}.viewport-hint{top:124px;max-width:205px}}
 @media (max-height:650px){.tophead p{display:none}.cardbody{max-height:28dvh}.dockbtn{height:44px}.density{padding-top:4px;padding-bottom:4px}.viewport-hint{top:108px}.listview{top:118px}}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+/* v0.3.5: one continuous, reversible opening/closing motion.
+   Animate the *occupied heights* as well as the card's movement, so the
+   density bar returns during the same 520ms—not as a second movement. */
+.controlzone{gap:0}
+.card-motion,.density-motion{
+  height:0;overflow:hidden;min-height:0;pointer-events:none;
+  opacity:0;transform:translateY(24px) scale(.975);
+  transform-origin:center bottom;
+  transition-property:height,opacity,transform;
+  transition-duration:.52s;
+  transition-timing-function:cubic-bezier(.64,0,.78,0);
+}
+.card-motion.shown,.density-motion.shown{
+  pointer-events:auto;opacity:1;transform:translateY(0) scale(1);
+}
+/* Both slots must move on the SAME curve. Otherwise one expands early
+   while the other collapses late, creating an apparent second movement. */
+.controlzone.card-active .card-motion,
+.controlzone.card-active .density-motion{
+  transition-timing-function:cubic-bezier(.22,1,.36,1);
+}
+.cardgroup,.cardgroup.open,.cardgroup.closing{
+  display:block;animation:none;transform:none;opacity:1;
+  margin:14px 2px 8px;
+}
+.density{display:grid!important;margin-bottom:7px}
+.controlzone.card-active .density{display:grid!important}
+@media(prefers-reduced-motion:reduce){.card-motion,.density-motion{transition:none!important;transform:none!important}}
 /* Compact project label: never place a large mock-header over the map. */
 .tophead{padding:5px 9px;max-width:calc(100vw - 86px);border-radius:11px}
 .tophead .eyebrow{font-size:10px;line-height:1.2}
@@ -81,18 +109,18 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
   <rect width="100%" height="100%" fill="#f0f5f1" />
   <g id="world"><g id="baseLayer"><rect id="gridRect" fill="url(#grid)"/><g id="streets"/></g><g id="census"/><g id="dots"/><g id="donuts"/><g id="regionLayer" style="display:none"><polygon id="region" fill="#8164ce" fill-opacity=".12" stroke="#7552c2" stroke-width="2.5" stroke-linejoin="round"/><g id="handles"/></g></g>
  </svg>
- <header class="tophead"><div class="eyebrow">道の気配MAP｜UI試作 v0.3.4（架空データ）</div><button class="top-switch" id="switchView">一覧型UIに切替（比較）</button></header>
+ <header class="tophead"><div class="eyebrow">道の気配MAP｜UI試作 v0.3.5（架空データ）</div><button class="top-switch" id="switchView">一覧型UIに切替（比較）</button></header>
  <div class="zooms"><button id="zoomPlus" title="拡大" aria-label="地図を拡大">＋</button><button id="zoomMinus" title="縮小" aria-label="地図を縮小">−</button></div>
  <button id="shapeDismiss" class="shape-clear" type="button" hidden aria-label="表示中の範囲をすぐに消す">× 図形を消す</button>
  <button id="restoreDismiss" class="shape-restore" type="button" hidden aria-label="直前に消した範囲を元に戻す">↶ 直前の範囲を戻す</button>
  <div class="viewport-hint" id="mapHint">「囲む」を押すと、いま見ている地図の中心に5角形が現れます。</div>
  <div class="sampleLabel">● 模擬事故点／線は模擬道路交通量</div>
  <div class="bottomlayout" id="bottomlayout"><div class="controlzone">
-   <section class="cardgroup" id="cardgroup" aria-label="階層式操作カード"><nav class="breadcrumb" id="breadcrumb" aria-label="現在の階層"></nav><div class="cardbody" id="cardbody"></div></section>
-   <section class="density" aria-label="独立した濃度調整">
+   <div class="card-motion" id="cardMotion"><section class="cardgroup" id="cardgroup" aria-label="階層式操作カード"><nav class="breadcrumb" id="breadcrumb" aria-label="現在の階層"></nav><div class="cardbody" id="cardbody"></div></section></div>
+   <div class="density-motion" id="densityMotion"><section class="density" aria-label="独立した濃度調整">
      <label><span class="glyph">▧</span><span>地図の濃さ</span><output id="mapValue">70%</output><input id="mapDensity" type="range" min="10" max="100" value="70" aria-label="地図の濃さ"/></label>
      <label id="censusOpacityLabel"><span class="glyph">━</span><span>センサスの濃さ</span><output id="censusValue">65%</output><input id="censusDensity" type="range" min="0" max="100" value="65" aria-label="センサスの濃さ"/></label>
-   </section>
+   </section></div>
    <nav class="dock" aria-label="操作プレート">
       <button class="dockbtn" data-root="see" aria-pressed="false"><span>◉</span>見る</button>
       <button class="dockbtn" data-root="polygon" aria-pressed="false"><span>⬡</span>囲む</button>
@@ -245,26 +273,35 @@ function scheduleKeepPolygonInView(){
  });
 }
 const names={polygon:'囲む',see:'見る',individual:'個別事故点',donut:'集計',result:'範囲の結果',ai:'AI読み',layers:'重ねる',save:'保存',share:'共有'};
-let collapseTimer=0;
-function cancelCollapse(){
- if(collapseTimer){clearTimeout(collapseTimer);collapseTimer=0}
- cardgroup.classList.remove('closing');
+const cardMotion=by('cardMotion');
+const densityMotion=by('densityMotion');
+const densityPanel=densityMotion.querySelector('.density');
+let motionInitialized=false;
+function syncPlateMotion(open){
+ // A single timeline for the card and the replacement density bar.
+ // Keeping both siblings in the flex layout makes the dock glide once.
+ const cardHeight=cardgroup.offsetHeight+22; // 14px top + 8px bottom
+ const densityHeight=densityPanel.offsetHeight+7;
+ if(!motionInitialized){
+  cardMotion.style.transition='none';
+  densityMotion.style.transition='none';
+  motionInitialized=true;
+ }
+ cardMotion.classList.toggle('shown',open);
+ densityMotion.classList.toggle('shown',!open);
+ cardMotion.style.height=(open?cardHeight:0)+'px';
+ densityMotion.style.height=(open?0:densityHeight)+'px';
+ if(cardMotion.style.transition==='none')requestAnimationFrame(()=>{
+  cardMotion.style.transition='';densityMotion.style.transition='';
+ });
 }
+function cancelCollapse(){ /* Reopening simply reverses the active CSS transition. */ }
 function collapseCard(){
  if(!nav.length)return;
- cancelCollapse();
- cardgroup.classList.remove('open');
- cardgroup.classList.add('closing');
- const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
- collapseTimer=setTimeout(()=>{
-  collapseTimer=0;
-  cardgroup.classList.remove('closing');
-  nav=[];
-  render();
- },reduced?0:540);
+ nav=[];
+ render();
 }
-
-function showCard(path){cancelCollapse();nav=path;render();}
+function showCard(path){nav=path;render();}
 function chooseRoot(root){if(nav[0]===root){collapseCard();return;}if(root==='polygon'){if(!polygonVisible){initialVertices(5,true);focusNextPolygon=true;}else if(confirmed)confirmed=false;showCard(['polygon']);by('mapHint').textContent='白い頂点を動かして変形。図形の内側は全体移動、外側は地図をドラッグできます。';return;}if(root==='ai'&&!confirmed){showCard(['ai']);return;}showCard([root]);}
 function btn(label,action,cls='',extra=''){return `<button class="act ${cls}" data-action="${action}" ${extra}>${label}</button>`;}
 function topLine(title,showClear=false){return `<div class="ctop"><strong>${title}</strong><span class="ctop-actions">${showClear&&polygonVisible?'<button type="button" class="clear-inline" data-action="clearPolygon">× 図形を消す</button>':''}<button type="button" class="close" data-action="collapse" title="図形を残して操作カードだけ収納する">カードだけ収納 ▾</button></span></div>`;}
@@ -287,8 +324,8 @@ function cardContent(){const [root,child]=nav;
  if(root==='share')return topLine('B｜チームへ共有')+`<p class="explain">「私の気になる場所」を最大3件提出するための独立入口を想定しています。</p><div class="actions">${btn('提出の流れを確認','demoShare','purple')}</div><p class="miniNote">Slack送信や共有JSON書出は行いません。試作内に個人情報を記入する必要はありません。</p>`;
  return topLine('操作プレート')+`<p class="explain">下の操作を選んでください。</p>`;
 }
-function render(){updatePolygon();const open=nav.length>0;by('bottomlayout').querySelector('.controlzone').classList.toggle('card-active',open);cardgroup.classList.toggle('open',open);cardgroup.classList.toggle('deeper',nav.length>1);by('bottomlayout').style.display=listMode?'none':'';by('listview').classList.toggle('open',listMode);by('switchView').textContent=listMode?'プレート型UIに戻る':'一覧型UIに切替（比較）';document.querySelectorAll('[data-root]').forEach(b=>b.setAttribute('aria-pressed',nav[0]===b.dataset.root?'true':'false'));if(!open)return;
- breadcrumb.innerHTML=`<button data-back="0">操作プレート</button>`+nav.map((k,i)=>`<span class="arrow">›</span><button data-back="${i+1}">${names[k]||k}</button>`).join('');cardbody.innerHTML=cardContent();cardbody.classList.toggle('compact',nav[0]==='polygon'&&nav.length===1);cardbody.scrollTop=0;cardbody.classList.remove('reveal');void cardbody.offsetWidth;cardbody.classList.add('reveal');refreshDynamicText();scheduleKeepPolygonInView();}
+function render(){updatePolygon();const open=nav.length>0;by('bottomlayout').querySelector('.controlzone').classList.toggle('card-active',open);cardgroup.classList.toggle('open',open);cardgroup.classList.toggle('deeper',nav.length>1);by('bottomlayout').style.display=listMode?'none':'';by('listview').classList.toggle('open',listMode);by('switchView').textContent=listMode?'プレート型UIに戻る':'一覧型UIに切替（比較）';document.querySelectorAll('[data-root]').forEach(b=>b.setAttribute('aria-pressed',nav[0]===b.dataset.root?'true':'false'));if(!open){syncPlateMotion(false);return;}
+ breadcrumb.innerHTML=`<button data-back="0">操作プレート</button>`+nav.map((k,i)=>`<span class="arrow">›</span><button data-back="${i+1}">${names[k]||k}</button>`).join('');cardbody.innerHTML=cardContent();cardbody.classList.toggle('compact',nav[0]==='polygon'&&nav.length===1);cardbody.scrollTop=0;cardbody.classList.remove('reveal');void cardbody.offsetWidth;cardbody.classList.add('reveal');refreshDynamicText();syncPlateMotion(true);scheduleKeepPolygonInView();}
 function refreshDynamicText(){let label=by('liveCount');if(label)label.textContent=`模擬点 ${mockCount()}個`;}
 async function copyText(value){try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value);toast('模擬文章をコピーしました');return;}}catch(e){}const t=by('aiText');if(t){t.focus();t.select();const ok=document.execCommand?.('copy');toast(ok?'模擬文章をコピーしました':'文章を選択しました。手動でコピーしてください');}else toast('コピー機能が利用できません');}
 function action(code){
