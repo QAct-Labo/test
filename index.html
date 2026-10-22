@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#eaf2f0" />
-<title>道の気配MAP｜統合操作プレート試作 v0.3.5</title>
+<title>道の気配MAP｜統合操作プレート試作 v0.3.6</title>
 <style>
 :root{--ink:#193d42;--muted:#637a80;--teal:#08776e;--teal-bg:#dbf2ed;--edge:#d2e0df;--surface:#ffffffed;--purple:#694bb8;--purple-bg:#eee9ff;--shadow:0 7px 26px #153e3d2a;--safe:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}html,body{height:100%;margin:0;overscroll-behavior:none}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Noto Sans JP",sans-serif;background:#eaf2f0;color:var(--ink)}
@@ -65,7 +65,7 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
 @media (max-width:390px){.dock{padding:5px;gap:2px}.dockbtn{font-size:10px}.dockbtn.special{max-width:39px}.dockbtn span:first-child{font-size:17px}.cardbody{max-height:32dvh;padding:9px}.density{padding:5px 8px;gap:5px}.tophead{max-width:calc(100vw - 76px);padding:7px 10px}.tophead h1{font-size:12px}.tophead p{font-size:9px}.viewport-hint{top:124px;max-width:205px}}
 @media (max-height:650px){.tophead p{display:none}.cardbody{max-height:28dvh}.dockbtn{height:44px}.density{padding-top:4px;padding-bottom:4px}.viewport-hint{top:108px}.listview{top:118px}}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
-/* v0.3.5: one continuous, reversible opening/closing motion.
+/* v0.3.6: one continuous, reversible opening/closing motion.
    Animate the *occupied heights* as well as the card's movement, so the
    density bar returns during the same 520ms—not as a second movement. */
 .controlzone{gap:0}
@@ -100,6 +100,18 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
 .viewport-hint{top:83px;max-width:190px;padding:5px 7px}
 @media(max-width:390px){.tophead{padding:5px 7px}.tophead .eyebrow{font-size:9px}.viewport-hint{top:78px}}
 @media(max-height:650px){.viewport-hint{top:77px}}
+
+/* v0.3.6: state is expressed in words, not color alone. */
+.stateflag{font-size:10px;font-weight:850;border-radius:8px;padding:5px 7px;background:#f0ebff;color:#5c3b9a;white-space:nowrap}
+.stateflag.done{background:#dff3e9;color:#09694f}
+.ctop .status-title{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.guide-help{position:absolute;z-index:6;right:12px;top:calc(max(12px,env(safe-area-inset-top)) + 146px);border:1px solid #b9cbdb;background:#fff;border-radius:99px;padding:8px 10px;color:#274e64;font-size:11px;font-weight:850;box-shadow:0 3px 9px #153e3d20}
+.guide-help[hidden],.touch-guide[hidden]{display:none}
+.touch-guide{position:absolute;z-index:8;left:50%;top:29%;transform:translateX(-50%);width:min(310px,calc(100vw - 72px));pointer-events:none;padding:12px 14px;border-radius:13px;background:#fffffff2;border:1px solid #bba6e1;box-shadow:0 4px 18px #16243a26;color:#4d376b;font-size:12px;line-height:1.65}
+.touch-guide strong{display:block;font-size:13px}
+.touch-guide small{font-size:10px;display:block;margin-top:3px}
+.result-ai{padding:9px;border:1px solid #b9d9d0;background:#f1fbf8;border-radius:10px;margin:7px 0}
+.result-ai strong{font-size:12px}.result-ai p{font-size:10px;color:#476662;margin:5px 0 8px}
 </style>
 </head>
 <body>
@@ -109,10 +121,12 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
   <rect width="100%" height="100%" fill="#f0f5f1" />
   <g id="world"><g id="baseLayer"><rect id="gridRect" fill="url(#grid)"/><g id="streets"/></g><g id="census"/><g id="dots"/><g id="donuts"/><g id="regionLayer" style="display:none"><polygon id="region" fill="#8164ce" fill-opacity=".12" stroke="#7552c2" stroke-width="2.5" stroke-linejoin="round"/><g id="handles"/></g></g>
  </svg>
- <header class="tophead"><div class="eyebrow">道の気配MAP｜UI試作 v0.3.5（架空データ）</div><button class="top-switch" id="switchView">一覧型UIに切替（比較）</button></header>
+ <header class="tophead"><div class="eyebrow">道の気配MAP｜UI試作 v0.3.6（架空データ）</div><button class="top-switch" id="switchView">一覧型UIに切替（比較）</button></header>
  <div class="zooms"><button id="zoomPlus" title="拡大" aria-label="地図を拡大">＋</button><button id="zoomMinus" title="縮小" aria-label="地図を縮小">−</button></div>
  <button id="shapeDismiss" class="shape-clear" type="button" hidden aria-label="表示中の範囲をすぐに消す">× 図形を消す</button>
  <button id="restoreDismiss" class="shape-restore" type="button" hidden aria-label="直前に消した範囲を元に戻す">↶ 直前の範囲を戻す</button>
+ <button class="guide-help" id="guideHelp" hidden type="button" aria-label="図形の操作方法を見る">？ 操作方法</button>
+ <div class="touch-guide" id="touchGuide" hidden aria-live="polite"><strong>白い丸をドラッグ → 形を調整</strong><strong>図形の内側をドラッグ → 全体を移動</strong><small>地図の外側は地図移動です。操作すると案内は消えます。</small></div>
  <div class="viewport-hint" id="mapHint">「囲む」を押すと、いま見ている地図の中心に5角形が現れます。</div>
  <div class="sampleLabel">● 模擬事故点／線は模擬道路交通量</div>
  <div class="bottomlayout" id="bottomlayout"><div class="controlzone">
@@ -152,6 +166,10 @@ const cardgroup=by('cardgroup'),cardbody=by('cardbody'),breadcrumb=by('breadcrum
 let W=innerWidth,H=innerHeight, zoom=1,pan={x:0,y:0};
 let center={x:W*.5,y:H*.5};
 let vertices=[],shapeN=5,polygonVisible=false,confirmed=false,undoStack=[],pointerDrag=null,touches=new Map(),pinch=null;
+let guideDismissed=false;
+function dismissGuide(){guideDismissed=true;by('touchGuide').hidden=true;}
+function showGuide(){if(polygonVisible&&!confirmed){by('touchGuide').hidden=false;}}
+
 let lastDeleted=null,autoPanTimer=0,autoPanFlight=0,focusNextPolygon=false;
 let nav=[],listMode=false,viewMode='individual',filter='all',show={census:true,dots:true};
 const sampleOffsets=[[-.54,-.51],[.21,-.71],[.67,-.33],[-.35,-.21],[.07,.12],[.4,.28],[.06,.62],[-.61,.37],[.69,.71],[-.75,.07],[.75,-.59],[-.14,-.62],[.31,-.12],[-.2,.42],[-.87,-.57]];
@@ -187,11 +205,11 @@ function initialVertices(n,fromCurrentView=false){
 }
 function contained(x,y,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if(((a.y>y)!==(b.y>y))&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)c=!c;}return c}
 function mockCount(){if(!polygonVisible)return 0;return sampleDots.filter(d=>contained(d.x,d.y,vertices)).length;}
-function updatePolygon(){by('mapHint').style.display=polygonVisible?'none':'';by('shapeDismiss').hidden=!polygonVisible;by('restoreDismiss').hidden=polygonVisible||!lastDeleted;const editing=polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav.length===1;world.setAttribute('transform',`translate(${pan.x} ${pan.y}) scale(${zoom})`);regionLayer.style.display=polygonVisible?'':'none';if(!polygonVisible)return;region.setAttribute('points',vertices.map(v=>`${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' '));region.setAttribute('stroke',confirmed?'#0f766e':'#7755c7');region.setAttribute('fill',confirmed?'#44a58f':'#8164ce');handles.replaceChildren();if(editing){vertices.forEach((p,i)=>{let g=el('g',{'data-handle':i,class:'handle'},handles);el('circle',{cx:p.x,cy:p.y,r:24,fill:'#fff','fill-opacity':'.015'},g);el('circle',{cx:p.x,cy:p.y,r:9.5,fill:'#fff',stroke:'#7755c7','stroke-width':2.25,filter:'url(#hshadow)'},g);el('circle',{cx:p.x,cy:p.y,r:2.2,fill:'#7755c7'},g)})}}
+function updatePolygon(){by('mapHint').style.display=polygonVisible?'none':'';by('shapeDismiss').hidden=!polygonVisible;by('restoreDismiss').hidden=polygonVisible||!lastDeleted;const editing=polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav.length===1;world.setAttribute('transform',`translate(${pan.x} ${pan.y}) scale(${zoom})`);regionLayer.style.display=polygonVisible?'':'none';if(!polygonVisible){by('touchGuide').hidden=true;return;}region.setAttribute('points',vertices.map(v=>`${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' '));region.setAttribute('stroke',confirmed?'#0f766e':'#7755c7');region.setAttribute('fill',confirmed?'#44a58f':'#8164ce');handles.replaceChildren();if(editing){vertices.forEach((p,i)=>{let g=el('g',{'data-handle':i,class:'handle'},handles);el('circle',{cx:p.x,cy:p.y,r:24,fill:'#fff','fill-opacity':'.015'},g);el('circle',{cx:p.x,cy:p.y,r:9.5,fill:'#fff',stroke:'#7755c7','stroke-width':2.25,filter:'url(#hshadow)'},g);el('circle',{cx:p.x,cy:p.y,r:2.2,fill:'#7755c7'},g)})}}
 const clone=()=>vertices.map(p=>({...p}));
 const xy=e=>{const b=svg.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top}};
 function worldXY(s){return{x:(s.x-pan.x)/zoom,y:(s.y-pan.y)/zoom}}
-function pointerDown(e){if(e.button!==undefined&&e.button!==0)return;cancelAutoPan();const s=xy(e);touches.set(e.pointerId,s);if(touches.size===2){pointerDrag=null;const vals=[...touches.values()];pinch={dist:Math.hypot(vals[0].x-vals[1].x,vals[0].y-vals[1].y),zoom,pan:{...pan},worldPt:worldXY({x:(vals[0].x+vals[1].x)/2,y:(vals[0].y+vals[1].y)/2})};}else if(touches.size===1){const h=e.target.closest?.('[data-handle]');let kind='pan',index=-1;if(polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav.length===1&&h){kind='vertex';index=+h.dataset.handle;}else if(polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav.length===1&&e.target===region){kind='shape';}pointerDrag={id:e.pointerId,start:s,kind,index,vertices:clone(),pan:{...pan},moved:false};}svg.setPointerCapture(e.pointerId);e.preventDefault();}
+function pointerDown(e){if(e.target.closest?.('[data-handle]')||e.target===region)dismissGuide();if(e.button!==undefined&&e.button!==0)return;cancelAutoPan();const s=xy(e);touches.set(e.pointerId,s);if(touches.size===2){pointerDrag=null;const vals=[...touches.values()];pinch={dist:Math.hypot(vals[0].x-vals[1].x,vals[0].y-vals[1].y),zoom,pan:{...pan},worldPt:worldXY({x:(vals[0].x+vals[1].x)/2,y:(vals[0].y+vals[1].y)/2})};}else if(touches.size===1){const h=e.target.closest?.('[data-handle]');let kind='pan',index=-1;if(polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav.length===1&&h){kind='vertex';index=+h.dataset.handle;}else if(polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav.length===1&&e.target===region){kind='shape';}pointerDrag={id:e.pointerId,start:s,kind,index,vertices:clone(),pan:{...pan},moved:false};}svg.setPointerCapture(e.pointerId);e.preventDefault();}
 function pointerMove(e){if(!touches.has(e.pointerId))return;const s=xy(e);touches.set(e.pointerId,s);if(touches.size===2&&pinch){const vals=[...touches.values()],mid={x:(vals[0].x+vals[1].x)/2,y:(vals[0].y+vals[1].y)/2};const d=Math.hypot(vals[0].x-vals[1].x,vals[0].y-vals[1].y);zoom=Math.max(.6,Math.min(3.1,pinch.zoom*d/Math.max(1,pinch.dist)));pan={x:mid.x-pinch.worldPt.x*zoom,y:mid.y-pinch.worldPt.y*zoom};updatePolygon();e.preventDefault();return;}if(!pointerDrag||pointerDrag.id!==e.pointerId)return;const dx=s.x-pointerDrag.start.x,dy=s.y-pointerDrag.start.y;if(Math.hypot(dx,dy)<1.3&&!pointerDrag.moved)return;pointerDrag.moved=true;if(pointerDrag.kind==='pan'){pan={x:pointerDrag.pan.x+dx,y:pointerDrag.pan.y+dy};}else if(pointerDrag.kind==='vertex'){vertices[pointerDrag.index]={x:pointerDrag.vertices[pointerDrag.index].x+dx/zoom,y:pointerDrag.vertices[pointerDrag.index].y+dy/zoom};}else{vertices=pointerDrag.vertices.map(p=>({x:p.x+dx/zoom,y:p.y+dy/zoom}));}updatePolygon();if((pointerDrag.kind==='vertex'||pointerDrag.kind==='shape')&&nav[0]==='polygon')refreshDynamicText();e.preventDefault();}
 function pointerEnd(e){if(!touches.has(e.pointerId))return;touches.delete(e.pointerId);if(pointerDrag&&pointerDrag.id===e.pointerId&&pointerDrag.moved&&(pointerDrag.kind==='vertex'||pointerDrag.kind==='shape')){undoStack.push(pointerDrag.vertices);if(undoStack.length>25)undoStack.shift();}pointerDrag=null;if(touches.size<2)pinch=null;updatePolygon();refreshDynamicText();e.preventDefault();}
 svg.addEventListener('pointerdown',pointerDown);svg.addEventListener('pointermove',pointerMove);svg.addEventListener('pointerup',pointerEnd);svg.addEventListener('pointercancel',pointerEnd);svg.addEventListener('lostpointercapture',pointerEnd);
@@ -302,9 +320,9 @@ function collapseCard(){
  render();
 }
 function showCard(path){nav=path;render();}
-function chooseRoot(root){if(nav[0]===root){collapseCard();return;}if(root==='polygon'){if(!polygonVisible){initialVertices(5,true);focusNextPolygon=true;}else if(confirmed)confirmed=false;showCard(['polygon']);by('mapHint').textContent='白い頂点を動かして変形。図形の内側は全体移動、外側は地図をドラッグできます。';return;}if(root==='ai'&&!confirmed){showCard(['ai']);return;}showCard([root]);}
+function chooseRoot(root){if(nav[0]===root){collapseCard();return;}if(root==='polygon'){if(!polygonVisible){initialVertices(5,true);focusNextPolygon=true;}else if(confirmed)confirmed=false;showCard(['polygon']);if(!guideDismissed)showGuide();by('mapHint').textContent='白い頂点を動かして変形。図形の内側は全体移動、外側は地図をドラッグできます。';return;}if(root==='ai'&&!confirmed){showCard(['ai']);return;}showCard([root]);}
 function btn(label,action,cls='',extra=''){return `<button class="act ${cls}" data-action="${action}" ${extra}>${label}</button>`;}
-function topLine(title,showClear=false){return `<div class="ctop"><strong>${title}</strong><span class="ctop-actions">${showClear&&polygonVisible?'<button type="button" class="clear-inline" data-action="clearPolygon">× 図形を消す</button>':''}<button type="button" class="close" data-action="collapse" title="図形を残して操作カードだけ収納する">カードだけ収納 ▾</button></span></div>`;}
+function topLine(title,showClear=false){const status=title.startsWith('囲む｜範囲を調整')?'<span class="stateflag">✎ 調整中</span>':title.startsWith('囲んだ範囲｜確定')?'<span class="stateflag done">✓ 確定済み</span>':'';return `<div class="ctop"><span class="status-title"><strong>${title}</strong>${status}</span><span class="ctop-actions">${showClear&&polygonVisible?'<button type="button" class="clear-inline" data-action="clearPolygon">× 図形を消す</button>':''}<button type="button" class="close" data-action="collapse" title="図形を残して操作カードだけ収納する">カードだけ収納 ▾</button></span></div>`;}
 function filterButtons(){return `<div class="actions">${[['all','すべて'],['person','人対車両'],['vehicles','車両相互'],['bicycle','自転車関与']].map(([value,label])=>btn(label,'filter:'+value,filter===value?'selected':'')).join('')}</div>`;}
 function layerToggles(){return `<label class="toggle"><input type="checkbox" data-layer="census" ${show.census?'checked':''}>道路交通センサス（模擬）</label><label class="toggle"><input type="checkbox" data-layer="dots" ${show.dots?'checked':''}>事故点・集計（模擬）</label>`;}
 function aiPrompt(){return `【道の気配MAP｜疑似AI読み】\nこれは試作用の架空データです。実際の事故記録や現地の事実として扱わないでください。\n選択範囲：${shapeN}角形、模擬事故点 ${mockCount()}個。\nこの情報から断定できることと、現地確認が必要なことを分けて整理してください。`;}
@@ -317,14 +335,14 @@ function cardContent(){const [root,child]=nav;
   return topLine('囲む｜範囲を調整')+`<p class="explain">白い頂点を動かす／内側をドラッグして全体移動。</p><div class="actions">${btn('5角形','begin5',shapeN===5?'selected':'')}${btn('6角形','begin6',shapeN===6?'selected':'')}${btn('↶ 1つ戻す','undo','',undoStack.length?'':'disabled')}</div><div class="actions" style="margin-top:5px">${btn('初期化','reset')}${btn('この範囲で確定','confirm','primary')}</div><div class="status"><span>頂点 ${shapeN}個</span><strong id="liveCount">模擬点 ${mockCount()}個</strong></div>`;
  }
 
- if(root==='polygon'&&child==='result')return topLine('囲んだ範囲｜確定')+`<p class="explain">模擬点：<strong>${mockCount()}個</strong>（架空値）。</p><div class="actions">${btn('形を再編集','reedit')}${btn('AI読みへ','ai','primary')}</div><p class="miniNote">範囲を消す場合は、地図右上の「× 図形を消す」を使えます。</p>`;
+ if(root==='polygon'&&child==='result')return topLine('囲んだ範囲｜確定')+`<p class="explain">範囲が確定しました。模擬点：<strong>${mockCount()}個</strong>（架空値）。</p><div class="result-ai"><strong>✧ この範囲をAIに読んでもらう</strong><p>事故記録を整理し、現地で確認したいことを考えるための文章を作れます。</p>${btn('AI読みへ進む →','ai','primary')}</div><div class="actions">${btn('形を再編集','reedit')}</div><p class="miniNote">AIには自動送信せず、文章をコピーします。試作の集計は架空値です。</p>`;
  if(root==='ai')return topLine('AIに読んでもらう')+(confirmed?`<p class="explain">確定済み範囲から、AIに渡す文章の試作を表示します。</p><textarea id="aiText" aria-label="AIに渡す模擬文章" style="width:100%;height:94px;resize:vertical;border:1px solid var(--edge);border-radius:9px;padding:7px;font-size:11px">${aiPrompt()}</textarea><div class="actions">${btn('文章をコピー','copyAI','primary')}${btn('範囲を再編集','reedit')}</div>`:`<p class="explain">先に「囲む」で範囲を確定してください。確定後に文章のコピーができます。</p><div class="actions">${btn('囲むへ進む','polygon','primary')}</div>`)+`<p class="miniNote">実際のAIへ自動送信しません。文章・集計は模擬です。</p>`;
  if(root==='layers')return topLine('地図に重ねる情報')+`<p class="explain">表示のON/OFFのみ。濃度はカードを収納すると現れる独立バーで調整します。</p>${layerToggles()}<p class="miniNote">本体Viewerには行政参照・施設・環境PoCなどのレイヤーがありますが、ここでは再現していません。</p>`;
  if(root==='save')return topLine('A｜自分用に保存')+`<p class="explain">これは特別操作の入口を試す画面です。実際には範囲や個人メモの保存を扱います。</p><div class="actions">${btn('保存の疑似実行','demoSave','purple')}</div><p class="miniNote">JSON保存、ブラウザ保存、読み込みは行いません。</p>`;
  if(root==='share')return topLine('B｜チームへ共有')+`<p class="explain">「私の気になる場所」を最大3件提出するための独立入口を想定しています。</p><div class="actions">${btn('提出の流れを確認','demoShare','purple')}</div><p class="miniNote">Slack送信や共有JSON書出は行いません。試作内に個人情報を記入する必要はありません。</p>`;
  return topLine('操作プレート')+`<p class="explain">下の操作を選んでください。</p>`;
 }
-function render(){updatePolygon();const open=nav.length>0;by('bottomlayout').querySelector('.controlzone').classList.toggle('card-active',open);cardgroup.classList.toggle('open',open);cardgroup.classList.toggle('deeper',nav.length>1);by('bottomlayout').style.display=listMode?'none':'';by('listview').classList.toggle('open',listMode);by('switchView').textContent=listMode?'プレート型UIに戻る':'一覧型UIに切替（比較）';document.querySelectorAll('[data-root]').forEach(b=>b.setAttribute('aria-pressed',nav[0]===b.dataset.root?'true':'false'));if(!open){syncPlateMotion(false);return;}
+function render(){updatePolygon();by('guideHelp').hidden=!polygonVisible||confirmed;const open=nav.length>0;by('bottomlayout').querySelector('.controlzone').classList.toggle('card-active',open);cardgroup.classList.toggle('open',open);cardgroup.classList.toggle('deeper',nav.length>1);by('bottomlayout').style.display=listMode?'none':'';by('listview').classList.toggle('open',listMode);by('switchView').textContent=listMode?'プレート型UIに戻る':'一覧型UIに切替（比較）';document.querySelectorAll('[data-root]').forEach(b=>b.setAttribute('aria-pressed',nav[0]===b.dataset.root?'true':'false'));if(!open){syncPlateMotion(false);return;}
  breadcrumb.innerHTML=`<button data-back="0">操作プレート</button>`+nav.map((k,i)=>`<span class="arrow">›</span><button data-back="${i+1}">${names[k]||k}</button>`).join('');cardbody.innerHTML=cardContent();cardbody.classList.toggle('compact',nav[0]==='polygon'&&nav.length===1);cardbody.scrollTop=0;cardbody.classList.remove('reveal');void cardbody.offsetWidth;cardbody.classList.add('reveal');refreshDynamicText();syncPlateMotion(true);scheduleKeepPolygonInView();}
 function refreshDynamicText(){let label=by('liveCount');if(label)label.textContent=`模擬点 ${mockCount()}個`;}
 async function copyText(value){try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value);toast('模擬文章をコピーしました');return;}}catch(e){}const t=by('aiText');if(t){t.focus();t.select();const ok=document.execCommand?.('copy');toast(ok?'模擬文章をコピーしました':'文章を選択しました。手動でコピーしてください');}else toast('コピー機能が利用できません');}
@@ -335,9 +353,9 @@ function action(code){
  if(code==='begin5'||code==='begin6'){const newShape=!polygonVisible;initialVertices(code==='begin5'?5:6,newShape);if(newShape)focusNextPolygon=true;showCard(['polygon']);return;}
  if(code==='undo'){if(undoStack.length&&!confirmed){vertices=undoStack.pop();updatePolygon();render();}return;}
  if(code==='reset'){initialVertices(shapeN);showCard(['polygon']);return;}
- if(code==='clearPolygon'){cancelCollapse();clearPolygon();return;}
+ if(code==='clearPolygon'){dismissGuide();cancelCollapse();clearPolygon();return;}
  if(code==='restoreDeleted'){restoreDeleted();return;}
- if(code==='confirm'){if(!polygonVisible){initialVertices(5);}confirmed=true;updatePolygon();showCard(['polygon','result']);toast('模擬範囲を確定しました');return;}
+ if(code==='confirm'){dismissGuide();if(!polygonVisible){initialVertices(5);}confirmed=true;updatePolygon();showCard(['polygon','result']);toast('模擬範囲を確定しました');return;}
  if(code==='reedit'){if(!polygonVisible)initialVertices(5);confirmed=false;updatePolygon();showCard(['polygon']);return;}
  if(code==='ai'){showCard(['ai']);return;}
  if(code.startsWith('filter:')){filter=code.slice(7);refreshLayers();render();return;}
@@ -347,6 +365,7 @@ function action(code){
  if(code==='save'||code==='share'){showCard([code]);return;}
  if(code==='closeList'){listMode=false;render();return;}
 }
+by('guideHelp').addEventListener('click',showGuide);
 by('shapeDismiss').addEventListener('click',()=>{cancelCollapse();clearPolygon()});
 by('restoreDismiss').addEventListener('click',restoreDeleted);
 document.addEventListener('click',e=>{const root=e.target.closest('[data-root]');if(root){chooseRoot(root.dataset.root);return;}const back=e.target.closest('[data-back]');if(back){const idx=Number(back.dataset.back);if(idx===0){collapseCard();}else{cancelCollapse();nav=nav.slice(0,idx);render();}return;}const act=e.target.closest('[data-action]');if(act){action(act.dataset.action);return;}});
