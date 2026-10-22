@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#eaf2f0" />
-<title>道の気配MAP｜統合操作プレート試作 v0.3.6</title>
+<title>道の気配MAP｜統合操作プレート試作 v0.3.7</title>
 <style>
 :root{--ink:#193d42;--muted:#637a80;--teal:#08776e;--teal-bg:#dbf2ed;--edge:#d2e0df;--surface:#ffffffed;--purple:#694bb8;--purple-bg:#eee9ff;--shadow:0 7px 26px #153e3d2a;--safe:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}html,body{height:100%;margin:0;overscroll-behavior:none}body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic UI","Noto Sans JP",sans-serif;background:#eaf2f0;color:var(--ink)}
@@ -65,7 +65,7 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
 @media (max-width:390px){.dock{padding:5px;gap:2px}.dockbtn{font-size:10px}.dockbtn.special{max-width:39px}.dockbtn span:first-child{font-size:17px}.cardbody{max-height:32dvh;padding:9px}.density{padding:5px 8px;gap:5px}.tophead{max-width:calc(100vw - 76px);padding:7px 10px}.tophead h1{font-size:12px}.tophead p{font-size:9px}.viewport-hint{top:124px;max-width:205px}}
 @media (max-height:650px){.tophead p{display:none}.cardbody{max-height:28dvh}.dockbtn{height:44px}.density{padding-top:4px;padding-bottom:4px}.viewport-hint{top:108px}.listview{top:118px}}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
-/* v0.3.6: one continuous, reversible opening/closing motion.
+/* v0.3.7: one continuous, reversible opening/closing motion.
    Animate the *occupied heights* as well as the card's movement, so the
    density bar returns during the same 520ms—not as a second movement. */
 .controlzone{gap:0}
@@ -101,15 +101,23 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
 @media(max-width:390px){.tophead{padding:5px 7px}.tophead .eyebrow{font-size:9px}.viewport-hint{top:78px}}
 @media(max-height:650px){.viewport-hint{top:77px}}
 
-/* v0.3.6: state is expressed in words, not color alone. */
+/* v0.3.7: state is expressed in words, not color alone. */
 .stateflag{font-size:10px;font-weight:850;border-radius:8px;padding:5px 7px;background:#f0ebff;color:#5c3b9a;white-space:nowrap}
 .stateflag.done{background:#dff3e9;color:#09694f}
 .ctop .status-title{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .guide-help{position:absolute;z-index:6;right:12px;top:calc(max(12px,env(safe-area-inset-top)) + 146px);border:1px solid #b9cbdb;background:#fff;border-radius:99px;padding:8px 10px;color:#274e64;font-size:11px;font-weight:850;box-shadow:0 3px 9px #153e3d20}
 .guide-help[hidden],.touch-guide[hidden]{display:none}
-.touch-guide{position:absolute;z-index:8;left:50%;top:29%;transform:translateX(-50%);width:min(310px,calc(100vw - 72px));pointer-events:none;padding:12px 14px;border-radius:13px;background:#fffffff2;border:1px solid #bba6e1;box-shadow:0 4px 18px #16243a26;color:#4d376b;font-size:12px;line-height:1.65}
-.touch-guide strong{display:block;font-size:13px}
-.touch-guide small{font-size:10px;display:block;margin-top:3px}
+/* Compact contextual guide: stays above the polygon, never intercepts map touches. */
+.touch-guide{position:absolute;z-index:8;left:10px;right:10px;top:calc(env(safe-area-inset-top) + 77px);margin:auto;max-width:560px;pointer-events:none;padding:7px 10px;border-radius:10px;background:#fffffff0;border:1px solid #bba6e1;box-shadow:0 3px 12px #16243a1b;color:#4d376b;font-size:11px;line-height:1.45;display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;text-align:center}
+.touch-guide strong{display:inline;font-size:11px}
+.touch-guide small{display:none}
+.guide-help{top:calc(env(safe-area-inset-top) + 126px)}
+#interiorTip{pointer-events:none;user-select:none}
+#interiorTip text{font-family:system-ui,sans-serif;font-size:10px;font-weight:700;fill:#5d4189;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.handle.pulse circle:nth-child(2){animation:pointPulse 1.05s ease-in-out 1;transform-box:fill-box;transform-origin:center}
+@keyframes pointPulse{0%,100%{transform:scale(1)}40%{transform:scale(1.36)}}
+@media (prefers-reduced-motion:reduce){.handle.pulse circle:nth-child(2){animation:none}}
+@media(max-width:390px){.touch-guide{top:calc(env(safe-area-inset-top) + 60px);left:8px;right:8px;padding:5px 7px}.guide-help{top:calc(env(safe-area-inset-top) + 115px)}}
 .result-ai{padding:9px;border:1px solid #b9d9d0;background:#f1fbf8;border-radius:10px;margin:7px 0}
 .result-ai strong{font-size:12px}.result-ai p{font-size:10px;color:#476662;margin:5px 0 8px}
 </style>
@@ -119,14 +127,14 @@ button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:tran
  <svg id="map" aria-label="試作の模擬地図。囲む操作では白い頂点の丸をドラッグして形を変えられます。" role="application">
   <defs><pattern id="grid" width="27" height="27" patternUnits="userSpaceOnUse"><path d="M27 0H0V27" fill="none" stroke="#d9e7e1" stroke-width=".8"/></pattern><filter id="hshadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity=".18"/></filter></defs>
   <rect width="100%" height="100%" fill="#f0f5f1" />
-  <g id="world"><g id="baseLayer"><rect id="gridRect" fill="url(#grid)"/><g id="streets"/></g><g id="census"/><g id="dots"/><g id="donuts"/><g id="regionLayer" style="display:none"><polygon id="region" fill="#8164ce" fill-opacity=".12" stroke="#7552c2" stroke-width="2.5" stroke-linejoin="round"/><g id="handles"/></g></g>
+  <g id="world"><g id="baseLayer"><rect id="gridRect" fill="url(#grid)"/><g id="streets"/></g><g id="census"/><g id="dots"/><g id="donuts"/><g id="regionLayer" style="display:none"><polygon id="region" fill="#8164ce" fill-opacity=".12" stroke="#7552c2" stroke-width="2.5" stroke-linejoin="round"/><g id="handles"/><g id="interiorTip" style="display:none"><text id="interiorTipText">内側をドラッグで移動</text></g></g></g>
  </svg>
- <header class="tophead"><div class="eyebrow">道の気配MAP｜UI試作 v0.3.6（架空データ）</div><button class="top-switch" id="switchView">一覧型UIに切替（比較）</button></header>
+ <header class="tophead"><div class="eyebrow">道の気配MAP｜UI試作 v0.3.7（架空データ）</div><button class="top-switch" id="switchView">一覧型UIに切替（比較）</button></header>
  <div class="zooms"><button id="zoomPlus" title="拡大" aria-label="地図を拡大">＋</button><button id="zoomMinus" title="縮小" aria-label="地図を縮小">−</button></div>
  <button id="shapeDismiss" class="shape-clear" type="button" hidden aria-label="表示中の範囲をすぐに消す">× 図形を消す</button>
  <button id="restoreDismiss" class="shape-restore" type="button" hidden aria-label="直前に消した範囲を元に戻す">↶ 直前の範囲を戻す</button>
  <button class="guide-help" id="guideHelp" hidden type="button" aria-label="図形の操作方法を見る">？ 操作方法</button>
- <div class="touch-guide" id="touchGuide" hidden aria-live="polite"><strong>白い丸をドラッグ → 形を調整</strong><strong>図形の内側をドラッグ → 全体を移動</strong><small>地図の外側は地図移動です。操作すると案内は消えます。</small></div>
+ <div class="touch-guide" id="touchGuide" hidden aria-live="polite"><strong>○を動かす → 形を調整</strong><strong>内側をドラッグ → 全体を移動</strong></div>
  <div class="viewport-hint" id="mapHint">「囲む」を押すと、いま見ている地図の中心に5角形が現れます。</div>
  <div class="sampleLabel">● 模擬事故点／線は模擬道路交通量</div>
  <div class="bottomlayout" id="bottomlayout"><div class="controlzone">
@@ -167,8 +175,8 @@ let W=innerWidth,H=innerHeight, zoom=1,pan={x:0,y:0};
 let center={x:W*.5,y:H*.5};
 let vertices=[],shapeN=5,polygonVisible=false,confirmed=false,undoStack=[],pointerDrag=null,touches=new Map(),pinch=null;
 let guideDismissed=false;
-function dismissGuide(){guideDismissed=true;by('touchGuide').hidden=true;}
-function showGuide(){if(polygonVisible&&!confirmed){by('touchGuide').hidden=false;}}
+function dismissGuide(){guideDismissed=true;by('touchGuide').hidden=true;by('interiorTip').style.display='none';}
+function showGuide(){if(polygonVisible&&!confirmed){guideDismissed=false;by('touchGuide').hidden=false;by('interiorTip').style.display='';updatePolygon();}}
 
 let lastDeleted=null,autoPanTimer=0,autoPanFlight=0,focusNextPolygon=false;
 let nav=[],listMode=false,viewMode='individual',filter='all',show={census:true,dots:true};
@@ -205,7 +213,7 @@ function initialVertices(n,fromCurrentView=false){
 }
 function contained(x,y,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if(((a.y>y)!==(b.y>y))&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)c=!c;}return c}
 function mockCount(){if(!polygonVisible)return 0;return sampleDots.filter(d=>contained(d.x,d.y,vertices)).length;}
-function updatePolygon(){by('mapHint').style.display=polygonVisible?'none':'';by('shapeDismiss').hidden=!polygonVisible;by('restoreDismiss').hidden=polygonVisible||!lastDeleted;const editing=polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav.length===1;world.setAttribute('transform',`translate(${pan.x} ${pan.y}) scale(${zoom})`);regionLayer.style.display=polygonVisible?'':'none';if(!polygonVisible){by('touchGuide').hidden=true;return;}region.setAttribute('points',vertices.map(v=>`${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' '));region.setAttribute('stroke',confirmed?'#0f766e':'#7755c7');region.setAttribute('fill',confirmed?'#44a58f':'#8164ce');handles.replaceChildren();if(editing){vertices.forEach((p,i)=>{let g=el('g',{'data-handle':i,class:'handle'},handles);el('circle',{cx:p.x,cy:p.y,r:24,fill:'#fff','fill-opacity':'.015'},g);el('circle',{cx:p.x,cy:p.y,r:9.5,fill:'#fff',stroke:'#7755c7','stroke-width':2.25,filter:'url(#hshadow)'},g);el('circle',{cx:p.x,cy:p.y,r:2.2,fill:'#7755c7'},g)})}}
+function updatePolygon(){by('mapHint').style.display=polygonVisible?'none':'';by('shapeDismiss').hidden=!polygonVisible;by('restoreDismiss').hidden=polygonVisible||!lastDeleted;const editing=polygonVisible&&!confirmed&&nav[0]==='polygon'&&nav.length===1;world.setAttribute('transform',`translate(${pan.x} ${pan.y}) scale(${zoom})`);regionLayer.style.display=polygonVisible?'':'none';if(!polygonVisible){by('touchGuide').hidden=true;by('interiorTip').style.display='none';return;}region.setAttribute('points',vertices.map(v=>`${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' '));region.setAttribute('stroke',confirmed?'#0f766e':'#7755c7');region.setAttribute('fill',confirmed?'#44a58f':'#8164ce');handles.replaceChildren();const tip=by('interiorTip');tip.style.display=editing&&!by('touchGuide').hidden?'':'none';if(vertices.length){const c=polyCenter();by('interiorTipText').setAttribute('x',c.x);by('interiorTipText').setAttribute('y',c.y)}if(editing){vertices.forEach((p,i)=>{let g=el('g',{'data-handle':i,class:'handle'+(!by('touchGuide').hidden?' pulse':'')},handles);el('circle',{cx:p.x,cy:p.y,r:24,fill:'#fff','fill-opacity':'.015'},g);el('circle',{cx:p.x,cy:p.y,r:9.5,fill:'#fff',stroke:'#7755c7','stroke-width':2.25,filter:'url(#hshadow)'},g);el('circle',{cx:p.x,cy:p.y,r:2.2,fill:'#7755c7'},g)})}}
 const clone=()=>vertices.map(p=>({...p}));
 const xy=e=>{const b=svg.getBoundingClientRect();return{x:e.clientX-b.left,y:e.clientY-b.top}};
 function worldXY(s){return{x:(s.x-pan.x)/zoom,y:(s.y-pan.y)/zoom}}
@@ -339,13 +347,24 @@ function cardContent(){const [root,child]=nav;
  if(root==='ai')return topLine('AIに読んでもらう')+(confirmed?`<p class="explain">確定済み範囲から、AIに渡す文章の試作を表示します。</p><textarea id="aiText" aria-label="AIに渡す模擬文章" style="width:100%;height:94px;resize:vertical;border:1px solid var(--edge);border-radius:9px;padding:7px;font-size:11px">${aiPrompt()}</textarea><div class="actions">${btn('文章をコピー','copyAI','primary')}${btn('範囲を再編集','reedit')}</div>`:`<p class="explain">先に「囲む」で範囲を確定してください。確定後に文章のコピーができます。</p><div class="actions">${btn('囲むへ進む','polygon','primary')}</div>`)+`<p class="miniNote">実際のAIへ自動送信しません。文章・集計は模擬です。</p>`;
  if(root==='layers')return topLine('地図に重ねる情報')+`<p class="explain">表示のON/OFFのみ。濃度はカードを収納すると現れる独立バーで調整します。</p>${layerToggles()}<p class="miniNote">本体Viewerには行政参照・施設・環境PoCなどのレイヤーがありますが、ここでは再現していません。</p>`;
  if(root==='save')return topLine('A｜自分用に保存')+`<p class="explain">これは特別操作の入口を試す画面です。実際には範囲や個人メモの保存を扱います。</p><div class="actions">${btn('保存の疑似実行','demoSave','purple')}</div><p class="miniNote">JSON保存、ブラウザ保存、読み込みは行いません。</p>`;
- if(root==='share')return topLine('B｜チームへ共有')+`<p class="explain">「私の気になる場所」を最大3件提出するための独立入口を想定しています。</p><div class="actions">${btn('提出の流れを確認','demoShare','purple')}</div><p class="miniNote">Slack送信や共有JSON書出は行いません。試作内に個人情報を記入する必要はありません。</p>`;
+ if(root==='share')return topLine('B｜提出の試作')+`<p class="explain">模擬範囲とコメントをJSONとして保存・共有できます。実際の地理座標やViewer互換データではありません。</p><label class="miniNote" for="proposalComment">コメント（試作用。実名・個人情報は入力しないでください）</label><textarea id="proposalComment" rows="3" placeholder="例：この付近の見通しを調べたい" style="width:100%;min-height:68px;font-size:12px;border:1px solid var(--edge);border-radius:9px;padding:8px"></textarea><div class="actions">${btn('JSONを端末に保存','exportDemoJSON','primary')}${btn('スマホで共有','shareDemoJSON','purple')}</div><p class="miniNote">共有先はスマホで選択します（メール／Slackなど）。送信は自動では行いません。共有非対応の場合はJSON保存に切り替えてください。</p>`;
  return topLine('操作プレート')+`<p class="explain">下の操作を選んでください。</p>`;
 }
 function render(){updatePolygon();by('guideHelp').hidden=!polygonVisible||confirmed;const open=nav.length>0;by('bottomlayout').querySelector('.controlzone').classList.toggle('card-active',open);cardgroup.classList.toggle('open',open);cardgroup.classList.toggle('deeper',nav.length>1);by('bottomlayout').style.display=listMode?'none':'';by('listview').classList.toggle('open',listMode);by('switchView').textContent=listMode?'プレート型UIに戻る':'一覧型UIに切替（比較）';document.querySelectorAll('[data-root]').forEach(b=>b.setAttribute('aria-pressed',nav[0]===b.dataset.root?'true':'false'));if(!open){syncPlateMotion(false);return;}
  breadcrumb.innerHTML=`<button data-back="0">操作プレート</button>`+nav.map((k,i)=>`<span class="arrow">›</span><button data-back="${i+1}">${names[k]||k}</button>`).join('');cardbody.innerHTML=cardContent();cardbody.classList.toggle('compact',nav[0]==='polygon'&&nav.length===1);cardbody.scrollTop=0;cardbody.classList.remove('reveal');void cardbody.offsetWidth;cardbody.classList.add('reveal');refreshDynamicText();syncPlateMotion(true);scheduleKeepPolygonInView();}
 function refreshDynamicText(){let label=by('liveCount');if(label)label.textContent=`模擬点 ${mockCount()}個`;}
 async function copyText(value){try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(value);toast('模擬文章をコピーしました');return;}}catch(e){}const t=by('aiText');if(t){t.focus();t.select();const ok=document.execCommand?.('copy');toast(ok?'模擬文章をコピーしました':'文章を選択しました。手動でコピーしてください');}else toast('コピー機能が利用できません');}
+
+function proposalPayload(){
+ const comment=by('proposalComment')?.value?.trim()||'';
+ if(!polygonVisible||!confirmed){toast('先に範囲を確定してください');return null;}
+ return {format:'kihai-ui-mock-v0.3.7',warning:'架空のSVG座標です。実際の緯度・経度ではなく、Viewer/Analysisへは取り込めません。',createdAt:new Date().toISOString(),comment,polygon:{coordinateSystem:'mock-svg-world',vertices:vertices.map(p=>[Number(p.x.toFixed(3)),Number(p.y.toFixed(3))])},sampleCount:mockCount()};
+}
+function demoFile(payload){return new File([JSON.stringify(payload,null,2)],'kihai-mock-proposal.json',{type:'application/json'});}
+function saveDemoFile(payload){const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='kihai-mock-proposal.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);toast('試作JSONの保存を開始しました');}
+async function shareDemo(){const data=proposalPayload();if(!data)return;const f=demoFile(data);if(!navigator.share||!navigator.canShare?.({files:[f]})){saveDemoFile(data);toast('共有機能が使えないためJSONを保存しました');return;}
+ try{await navigator.share({files:[f],title:'道の気配MAP 模擬地点提出',text:'試作用の架空座標JSONです'});toast('共有画面を閉じました。送信先で投稿完了をご確認ください');}catch(e){if(e.name!=='AbortError'){saveDemoFile(data);toast('共有できなかったためJSONを保存しました')}}}
+
 function action(code){
  if(code==='collapse'){collapseCard();return;}
  if(code==='individual'||code==='donut'){setView(code==='individual'?'individual':'donut');showCard(['see',code]);return;}
@@ -361,7 +380,9 @@ function action(code){
  if(code.startsWith('filter:')){filter=code.slice(7);refreshLayers();render();return;}
  if(code==='copyAI'){copyText(by('aiText')?.value||aiPrompt());return;}
  if(code==='demoSave'){toast('試作です：保存は行いません');return;}
- if(code==='demoShare'){toast('試作です：共有・送信は行いません');return;}
+ if(code==='demoShare'){toast('共有は試作用です');return;}
+ if(code==='exportDemoJSON'){const data=proposalPayload();if(data)saveDemoFile(data);return;}
+ if(code==='shareDemoJSON'){shareDemo();return;}
  if(code==='save'||code==='share'){showCard([code]);return;}
  if(code==='closeList'){listMode=false;render();return;}
 }
